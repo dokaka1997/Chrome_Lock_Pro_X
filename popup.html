@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chrome Lock Pro X</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="app">
+    <section class="hero glass">
+      <div>
+        <div class="eyebrow">Chrome Lock Pro X</div>
+        <h1 id="heroTitle">Loading status...</h1>
+        <p id="heroText">Reading lock state, session timer, and current policy.</p>
+      </div>
+      <div class="hero-actions">
+        <button id="languageBtn" class="lang-btn" type="button" aria-label="Switch language">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.9 9h-3.02a15.9 15.9 0 00-1.22-5 8.03 8.03 0 014.24 5zM12 4.1c.88 1.2 1.85 3.46 2.2 6.9H9.8C10.15 7.56 11.12 5.3 12 4.1zM9.32 6a15.9 15.9 0 00-1.22 5H5.08a8.03 8.03 0 014.24-5zM5.08 13H8.1c.14 1.86.56 3.63 1.22 5a8.03 8.03 0 01-4.24-5zM12 19.9c-.88-1.2-1.85-3.46-2.2-6.9h4.4c-.35 3.44-1.32 5.7-2.2 6.9zM14.68 18a15.9 15.9 0 001.22-5h3.02a8.03 8.03 0 01-4.24 5z"></path>
+          </svg>
+          <span id="languageBtnLabel">EN</span>
+        </button>
+        <div class="signal" id="signal"></div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="tile glass"><span id="autoLockLabel">Auto-lock</span><strong id="autoLock">-</strong></div>
+      <div class="tile glass"><span id="sessionLabel">Session</span><strong id="sessionState">-</strong></div>
+      <div class="tile glass"><span id="blurLockLabel">Blur lock</span><strong id="blurLock">-</strong></div>
+      <div class="tile glass"><span id="blurZonesLabel">Blur zones</span><strong id="blurZones">-</strong></div>
+      <div class="tile glass"><span id="whitelistLabel">Whitelist</span><strong id="whitelistCount">-</strong></div>
+      <div class="tile glass"><span id="attemptsLabel">Attempts</span><strong id="attempts">-</strong></div>
+    </section>
+
+    <section class="actions glass">
+      <button id="lockNowBtn" class="primary">Panic Lock</button>
+      <button id="sessionBtn" class="secondary">15m Session</button>
+    </section>
+
+    <section class="tools glass">
+      <div id="modeLabel" class="mode-label">New region default</div>
+      <div class="mode-grid">
+        <button id="blurModeBtn" class="secondary mode-pill">Blur</button>
+        <button id="blackoutModeBtn" class="secondary mode-pill">Blackout</button>
+        <button id="pixelateModeBtn" class="secondary mode-pill">Pixelate</button>
+      </div>
+      <div class="tools-grid">
+        <button id="blurRegionBtn" class="secondary">New Region</button>
+        <button id="clearRegionsBtn" class="secondary">Clear Regions</button>
+      </div>
+      <div id="toolMsg" class="tool-msg">Privacy regions are saved per domain for the current tab.</div>
+    </section>
+
+    <section class="session-tools glass">
+      <div id="sessionNote" class="session-note">Default session is loading...</div>
+      <button id="optionsBtn" class="secondary wide">Open Settings</button>
+    </section>
+
+    <section class="note glass">
+      <span id="hotkeyPrefix">Default hotkey:</span> <code>Ctrl+Shift+L</code> / <code>Cmd+Shift+L</code>
+    </section>
+  </div>
+  <script src="i18n.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
