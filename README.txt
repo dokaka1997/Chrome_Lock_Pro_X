@@ -78,6 +78,7 @@ Neu can ngan nguoi dung go extension, ban phai dung moi truong `managed` voi Chr
 - Neu extension bi disable hoac go khoi Chrome thi overlay khong the tiep tuc ton tai.
 - Privacy policy mau nam o `PRIVACY_POLICY.md`. Truoc khi submit Chrome Web Store, ban can host policy nay tai mot URL HTTPS cong khai.
 - Noi dung copy-paste cho Chrome Web Store `Privacy practices` va checklist submit nam o `CHROME_STORE_SUBMISSION.md`.
+- Ban HTML san cho GitHub Pages nam o `docs/index.html`. Neu publish repo len GitHub va bat Pages tu branch `main` + folder `/docs`, URL privacy policy se la `https://<github-username>.github.io/<repo-name>/`.
 
 ## Phu hop cho
 

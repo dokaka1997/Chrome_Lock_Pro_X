@@ -65,6 +65,21 @@ Use the following positions in the Chrome Web Store dashboard:
 - Host `PRIVACY_POLICY.md` at a public HTTPS URL and place that URL in the store listing.
 - Upload at least one screenshot or one promo video before submitting for review.
 
+## GitHub Pages Setup
+
+This repo now includes a GitHub Pages-ready file at `docs/index.html`.
+
+If you publish this repository on GitHub, use:
+
+1. `Settings` -> `Pages`
+2. `Build and deployment` -> `Deploy from a branch`
+3. Branch: `main`
+4. Folder: `/docs`
+
+Your privacy policy URL will then be:
+
+`https://<github-username>.github.io/<repo-name>/`
+
 ## Suggested Screenshots
 
 Minimum set that should satisfy the listing requirement:
