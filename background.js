@@ -22,7 +22,9 @@ const KEYS = {
   blurRegionsByDomain: 'blurRegionsByDomain',
   defaultRegionMode: 'defaultRegionMode',
   maskPageIdentity: 'maskPageIdentity',
-  domainProfiles: 'domainProfiles'
+  domainProfiles: 'domainProfiles',
+  requirePasswordOnDomainChange: 'requirePasswordOnDomainChange',
+  sessionAccessHosts: 'sessionAccessHosts'
 };
 
 const DEFAULTS = {
@@ -40,6 +42,8 @@ const DEFAULTS = {
   defaultRegionMode: 'blur',
   maskPageIdentity: false,
   domainProfiles: [],
+  requirePasswordOnDomainChange: true,
+  sessionAccessHosts: [],
   logs: [],
   settingsVersion: 8,
   whitelist: [
@@ -139,6 +143,26 @@ function normalizeRegionMode(value, fallback = DEFAULTS.defaultRegionMode) {
 function normalizeWhitelist(rules) {
   if (!Array.isArray(rules)) return [...DEFAULTS.whitelist];
   return [...new Set(rules.map((rule) => String(rule || '').trim()).filter(Boolean))];
+}
+
+function getSessionAccessHost(url) {
+  try {
+    const parsed = new URL(url);
+    if (!/^https?:$/i.test(parsed.protocol)) return '';
+    return parsed.hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function normalizeSessionAccessHosts(hosts) {
+  if (!Array.isArray(hosts)) return [];
+
+  return [...new Set(
+    hosts
+      .map((host) => getSessionAccessHost(`https://${String(host || '').trim()}`) || String(host || '').trim().toLowerCase())
+      .filter(Boolean)
+  )].slice(0, 200);
 }
 
 function readStateNumber(state, key, fallback) {
@@ -280,7 +304,12 @@ function getSettingsSnapshot(state) {
     requiresPasswordSetup: readStateBoolean(state, KEYS.requiresPasswordSetup, DEFAULTS.requiresPasswordSetup),
     defaultRegionMode: normalizeRegionMode(state[KEYS.defaultRegionMode], DEFAULTS.defaultRegionMode),
     maskPageIdentity: readStateBoolean(state, KEYS.maskPageIdentity, DEFAULTS.maskPageIdentity),
-    domainProfiles: normalizeDomainProfiles(state[KEYS.domainProfiles])
+    domainProfiles: normalizeDomainProfiles(state[KEYS.domainProfiles]),
+    requirePasswordOnDomainChange: readStateBoolean(
+      state,
+      KEYS.requirePasswordOnDomainChange,
+      DEFAULTS.requirePasswordOnDomainChange
+    )
   };
 }
 
@@ -348,6 +377,17 @@ async function ensureInitialized() {
       updates[KEYS.domainProfiles] = normalizedProfiles;
     }
   }
+  if (typeof state[KEYS.requirePasswordOnDomainChange] !== 'boolean') {
+    updates[KEYS.requirePasswordOnDomainChange] = DEFAULTS.requirePasswordOnDomainChange;
+  }
+  if (!Array.isArray(state[KEYS.sessionAccessHosts])) {
+    updates[KEYS.sessionAccessHosts] = [...DEFAULTS.sessionAccessHosts];
+  } else {
+    const normalizedSessionHosts = normalizeSessionAccessHosts(state[KEYS.sessionAccessHosts]);
+    if (JSON.stringify(normalizedSessionHosts) !== JSON.stringify(state[KEYS.sessionAccessHosts])) {
+      updates[KEYS.sessionAccessHosts] = normalizedSessionHosts;
+    }
+  }
   if (!isPlainObject(state[KEYS.blurRegionsByDomain])) {
     updates[KEYS.blurRegionsByDomain] = { ...DEFAULTS.blurRegionsByDomain };
   } else {
@@ -403,6 +443,7 @@ function getEligibleTabs(tabs) {
 async function broadcastLockState() {
   const state = await getState();
   const settings = getSettingsSnapshot(state);
+  const sessionAccessHosts = normalizeSessionAccessHosts(state[KEYS.sessionAccessHosts]);
   const tabs = getEligibleTabs(await chrome.tabs.query({}));
 
   await Promise.allSettled(
@@ -420,7 +461,9 @@ async function broadcastLockState() {
       requiresPasswordSetup: settings.requiresPasswordSetup,
       defaultRegionMode: settings.defaultRegionMode,
       maskPageIdentity: settings.maskPageIdentity,
-      domainProfiles: settings.domainProfiles
+      domainProfiles: settings.domainProfiles,
+      requirePasswordOnDomainChange: settings.requirePasswordOnDomainChange,
+      sessionAccessHosts
     }))
   );
 }
@@ -436,21 +479,29 @@ async function lockNow(reason = 'manual', meta = {}) {
   await syncSessionAlarm(0);
   await setState({
     [KEYS.isLocked]: true,
-    [KEYS.unlockUntil]: 0
+    [KEYS.unlockUntil]: 0,
+    [KEYS.sessionAccessHosts]: []
   });
   await appendLog({ type: 'lock', reason, meta });
   await broadcastLockState();
 }
 
-async function unlockNow(source = 'password', tabUrl = '', sessionMinutes = 0) {
+async function unlockNow(state, source = 'password', tabUrl = '', sessionMinutes = 0, requirePasswordOnDomainChange = DEFAULTS.requirePasswordOnDomainChange) {
   const normalizedMinutes = clampInteger(sessionMinutes, 0, 1440, DEFAULTS.unlockSessionMinutes);
   const unlockUntil = normalizedMinutes > 0 ? now() + (normalizedMinutes * 60 * 1000) : 0;
+  const latestState = state || await getState();
+  const existingHosts = normalizeSessionAccessHosts(latestState?.[KEYS.sessionAccessHosts]);
+  const currentHost = getSessionAccessHost(tabUrl);
+  const sessionAccessHosts = requirePasswordOnDomainChange
+    ? normalizeSessionAccessHosts(currentHost ? [...existingHosts, currentHost] : existingHosts)
+    : [];
 
   await setState({
     [KEYS.isLocked]: false,
     [KEYS.failedAttempts]: 0,
     [KEYS.lockoutUntil]: 0,
-    [KEYS.unlockUntil]: unlockUntil
+    [KEYS.unlockUntil]: unlockUntil,
+    [KEYS.sessionAccessHosts]: sessionAccessHosts
   });
   await syncSessionAlarm(unlockUntil);
   await appendLog({
@@ -596,7 +647,9 @@ function buildStateResponse(state) {
     requiresPasswordSetup: settings.requiresPasswordSetup,
     defaultRegionMode: settings.defaultRegionMode,
     maskPageIdentity: settings.maskPageIdentity,
-    domainProfiles: settings.domainProfiles
+    domainProfiles: settings.domainProfiles,
+    requirePasswordOnDomainChange: settings.requirePasswordOnDomainChange,
+    sessionAccessHosts: normalizeSessionAccessHosts(state[KEYS.sessionAccessHosts])
   };
 }
 
@@ -659,6 +712,12 @@ function normalizeImportedConfig(config) {
     touched = true;
   }
 
+  const requirePasswordOnDomainChange = pickConfigValue(config, 'requirePasswordOnDomainChange');
+  if (requirePasswordOnDomainChange !== undefined) {
+    updates[KEYS.requirePasswordOnDomainChange] = !!requirePasswordOnDomainChange;
+    touched = true;
+  }
+
   const lockOnWindowBlur = pickConfigValue(config, 'lockOnWindowBlur');
   if (lockOnWindowBlur !== undefined) {
     updates[KEYS.lockOnWindowBlur] = !!lockOnWindowBlur;
@@ -689,6 +748,10 @@ function normalizeImportedConfig(config) {
     touched = true;
   }
 
+  if (updates[KEYS.requirePasswordOnDomainChange] === false) {
+    updates[KEYS.sessionAccessHosts] = [];
+  }
+
   if (!touched) {
     throw new Error('TRANSLATE_NO_IMPORT_FIELDS');
   }
@@ -704,6 +767,7 @@ function exportConfig(state) {
     maxAttempts: settings.maxAttempts,
     lockoutMinutes: settings.lockoutMinutes,
     unlockSessionMinutes: settings.unlockSessionMinutes,
+    requirePasswordOnDomainChange: settings.requirePasswordOnDomainChange,
     lockOnWindowBlur: settings.lockOnWindowBlur,
     defaultRegionMode: settings.defaultRegionMode,
     maskPageIdentity: settings.maskPageIdentity,
@@ -880,11 +944,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         [KEYS.maxAttempts]: clampInteger(message.maxAttempts, 1, 20, DEFAULTS.maxAttempts),
         [KEYS.lockoutMinutes]: clampInteger(message.lockoutMinutes, 1, 1440, DEFAULTS.lockoutMinutes),
         [KEYS.unlockSessionMinutes]: clampInteger(message.unlockSessionMinutes, 0, 1440, DEFAULTS.unlockSessionMinutes),
+        [KEYS.requirePasswordOnDomainChange]: !!message.requirePasswordOnDomainChange,
         [KEYS.lockOnWindowBlur]: !!message.lockOnWindowBlur,
         [KEYS.defaultRegionMode]: normalizeRegionMode(message.defaultRegionMode, DEFAULTS.defaultRegionMode),
         [KEYS.maskPageIdentity]: !!message.maskPageIdentity,
         [KEYS.domainProfiles]: normalizeDomainProfiles(message.domainProfiles)
       };
+
+      if (!updates[KEYS.requirePasswordOnDomainChange]) {
+        updates[KEYS.sessionAccessHosts] = [];
+      }
 
       updates[KEYS.failedAttempts] = Math.min(
         readStateNumber(state, KEYS.failedAttempts, DEFAULTS.failedAttempts),
@@ -940,7 +1009,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         message.sessionMinutes
       );
 
-      await unlockNow('initial-setup', message.url || sender?.url || '', requestedSessionMinutes);
+      await unlockNow(
+        state,
+        'initial-setup',
+        message.url || sender?.url || '',
+        requestedSessionMinutes,
+        settings.requirePasswordOnDomainChange
+      );
       sendResponse({ ok: true, success: true });
       return;
     }
@@ -1046,7 +1121,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           message.sessionMinutes
         );
 
-        await unlockNow('password', message.url || sender?.url || '', requestedSessionMinutes);
+        await unlockNow(
+          state,
+          'password',
+          message.url || sender?.url || '',
+          requestedSessionMinutes,
+          settings.requirePasswordOnDomainChange
+        );
         sendResponse({
           ok: true,
           success: true,

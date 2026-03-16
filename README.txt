@@ -9,6 +9,7 @@ Chrome Lock Pro X la mot Chrome Extension (Manifest V3) dung de khoa cac trang w
 - Hash mat khau bang `PBKDF2 + SHA-256 + random salt`.
 - Tu khoa khi mo lai Chrome, khi idle qua thoi gian cau hinh, khi bam panic hotkey, hoac khi toan bo cua so Chrome mat focus neu bat tuy chon do.
 - Ho tro `temporary unlock session` voi thoi luong mac dinh hoac chon nhanh khi mo khoa.
+- Ho tro mode yeu cau nhap lai mat khau khi chuyen sang domain moi trong cung mot unlock session.
 - Chong brute-force bang `failed attempts` va `lockout`.
 - Ho tro `Advanced Whitelist` theo cac rule:
   - `domain:example.com`
@@ -74,6 +75,7 @@ Neu can ngan nguoi dung go extension, ban phai dung moi truong `managed` voi Chr
 ## Ghi chu quan trong
 
 - Anti-remove overlay chi la best-effort o muc web page.
+- Mac dinh unlock session duoc gioi han theo domain/host. Muon mo khoa toan cuc cho moi trang trong cung session, tat tuy chon nay trong `Options`.
 - Security log co the luu URL da duoc chuan hoa o dang `origin + path` de phuc vu audit cuc bo.
 - Neu extension bi disable hoac go khoi Chrome thi overlay khong the tiep tuc ton tai.
 - Privacy policy mau nam o `PRIVACY_POLICY.md`. Truoc khi submit Chrome Web Store, ban can host policy nay tai mot URL HTTPS cong khai.

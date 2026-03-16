@@ -122,6 +122,7 @@
       'options.policy.max_attempts_label': 'Maximum failed attempts',
       'options.policy.lockout_minutes_label': 'Lockout duration (minutes)',
       'options.policy.blur_lock_toggle': 'Lock immediately when all Chrome windows lose focus or are minimized',
+      'options.policy.domain_reauth_toggle': 'Require the password again when switching to a new domain',
       'options.policy.close_on_lockout_toggle': 'Close all Chrome windows when lockout is triggered by too many failed attempts',
       'options.privacy.title': 'Privacy Tools',
       'options.privacy.help': 'Set the default mode for new regions, mask the tab title/favicon, and create per-domain profiles.',
@@ -326,6 +327,7 @@
       'options.policy.max_attempts_label': 'Số lần nhập sai tối đa',
       'options.policy.lockout_minutes_label': 'Thời gian lockout (phút)',
       'options.policy.blur_lock_toggle': 'Khóa ngay khi toàn bộ cửa sổ Chrome mất focus hoặc bị thu nhỏ',
+      'options.policy.domain_reauth_toggle': 'Yêu cầu nhập lại mật khẩu khi chuyển sang domain mới',
       'options.policy.close_on_lockout_toggle': 'Đóng tất cả cửa sổ Chrome khi lockout do nhập sai quá nhiều lần',
       'options.privacy.title': 'Công Cụ Riêng Tư',
       'options.privacy.help': 'Chọn mode mặc định cho vùng mới, ẩn title/favicon của tab, và tạo profile theo domain.',
@@ -464,7 +466,7 @@
   });
 
   Object.assign(messages.vi, {
-    'options.whitelist.title': 'Whitelist nÃ¢ng cao',
+    'options.whitelist.title': 'Whitelist nâng cao',
     'options.backup.title': 'Sao lÆ°u cÃ i Ä‘áº·t',
     'options.backup.muted': 'Export bao gá»“m cÃ i Ä‘áº·t khÃ³a, profile, whitelist vÃ  cÃ¡c vÃ¹ng riÃªng tÆ° lÆ°u theo domain. Password material sáº½ khÃ´ng bao giá» Ä‘Æ°á»£c xuáº¥t.'
   });

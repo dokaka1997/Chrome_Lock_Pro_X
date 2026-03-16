@@ -153,9 +153,10 @@ async function sendMessageToActiveTab(message) {
 function render(state, blurState) {
   applyStaticTranslations();
 
-  const locked = !!state.isLocked;
+  const globallyLocked = !!state.isLocked;
+  const locked = blurState?.ok ? !!blurState.pageLocked : globallyLocked;
   const requiresSetup = !!state.requiresPasswordSetup;
-  const hasTemporarySession = !locked && Number(state.unlockUntil || 0) > Date.now();
+  const hasTemporarySession = !globallyLocked && Number(state.unlockUntil || 0) > Date.now();
   const sessionRemainingMs = Math.max(0, Number(state.unlockUntil || 0) - Date.now());
   const blurCount = blurState?.ok ? Number(blurState.count || 0) : 0;
   const defaultMode = state.defaultRegionMode || 'blur';
@@ -195,7 +196,7 @@ function render(state, blurState) {
   whitelistCount.textContent = `${(state.whitelist || []).length}`;
   attempts.textContent = `${state.failedAttempts || 0}/${state.maxAttempts || 5}`;
 
-  lockNowBtn.disabled = locked;
+  lockNowBtn.disabled = globallyLocked;
   sessionBtn.disabled = locked || requiresSetup;
   lockNowBtn.textContent = t('common.action.panic_lock');
   sessionBtn.textContent = locked
@@ -279,7 +280,7 @@ lockNowBtn.addEventListener('click', async () => {
 });
 
 sessionBtn.addEventListener('click', async () => {
-  if (!currentState || currentState.isLocked || currentState.requiresPasswordSetup) return;
+  if (!currentState || currentState.isLocked || currentState.requiresPasswordSetup || currentBlurState?.pageLocked) return;
 
   const hasTemporarySession = Number(currentState.unlockUntil || 0) > Date.now();
   await chrome.runtime.sendMessage({

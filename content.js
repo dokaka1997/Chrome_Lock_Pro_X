@@ -37,7 +37,9 @@ let currentState = {
   requiresPasswordSetup: false,
   defaultRegionMode: 'blur',
   maskPageIdentity: false,
-  domainProfiles: []
+  domainProfiles: [],
+  requirePasswordOnDomainChange: true,
+  sessionAccessHosts: []
 };
 
 function t(key, values) {
@@ -96,6 +98,21 @@ function isLockablePage() {
   return /^https?:/i.test(location.protocol);
 }
 
+function getSessionAccessHost(url = location.href) {
+  try {
+    const parsed = new URL(url);
+    if (!/^https?:$/i.test(parsed.protocol)) return '';
+    return parsed.hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function normalizeSessionAccessHosts(hosts) {
+  if (!Array.isArray(hosts)) return [];
+  return [...new Set(hosts.map((host) => String(host || '').trim().toLowerCase()).filter(Boolean))];
+}
+
 function normalizeRegionMode(value, fallback = 'blur') {
   const normalized = String(value || '').trim().toLowerCase();
   return REGION_MODES.includes(normalized) ? normalized : fallback;
@@ -148,8 +165,19 @@ function shouldBypassGlobalLock(profile = getActiveProfile()) {
   return !!profile?.bypassGlobalLock || isWhitelisted(location.href, currentState.whitelist);
 }
 
+function hasCurrentSessionAccess() {
+  if (currentState.isLocked) return false;
+  if (!currentState.requirePasswordOnDomainChange) return true;
+
+  const currentHost = getSessionAccessHost(location.href);
+  if (!currentHost) return false;
+
+  return normalizeSessionAccessHosts(currentState.sessionAccessHosts).includes(currentHost);
+}
+
 function isGlobalLockActiveForCurrentPage(profile = getActiveProfile()) {
-  return currentState.isLocked && !shouldBypassGlobalLock(profile);
+  if (shouldBypassGlobalLock(profile)) return false;
+  return !hasCurrentSessionAccess();
 }
 
 function clearActiveProfileAccess() {
@@ -1406,7 +1434,11 @@ async function init() {
         requiresPasswordSetup: !!state.requiresPasswordSetup,
         defaultRegionMode: normalizeRegionMode(state.defaultRegionMode, 'blur'),
         maskPageIdentity: !!state.maskPageIdentity,
-        domainProfiles: Array.isArray(state.domainProfiles) ? state.domainProfiles : []
+        domainProfiles: Array.isArray(state.domainProfiles) ? state.domainProfiles : [],
+        requirePasswordOnDomainChange: typeof state.requirePasswordOnDomainChange === 'boolean'
+          ? state.requirePasswordOnDomainChange
+          : true,
+        sessionAccessHosts: normalizeSessionAccessHosts(state.sessionAccessHosts)
       };
     }
 
@@ -1432,7 +1464,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       requiresPasswordSetup: !!message.requiresPasswordSetup,
       defaultRegionMode: normalizeRegionMode(message.defaultRegionMode, 'blur'),
       maskPageIdentity: !!message.maskPageIdentity,
-      domainProfiles: Array.isArray(message.domainProfiles) ? message.domainProfiles : []
+      domainProfiles: Array.isArray(message.domainProfiles) ? message.domainProfiles : [],
+      requirePasswordOnDomainChange: typeof message.requirePasswordOnDomainChange === 'boolean'
+        ? message.requirePasswordOnDomainChange
+        : true,
+      sessionAccessHosts: normalizeSessionAccessHosts(message.sessionAccessHosts)
     };
     const nextProfileId = getActiveProfile()?.id || '';
 
