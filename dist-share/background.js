@@ -1,36 +1,36 @@
-if (typeof importScripts === 'function') {
-  importScripts('i18n.js');
+if (typeof importScripts === '\x66\x75\x6e\x63\x74\x69\x6f\x6e') {
+  importScripts('\x69\x31\x38\x6e\x2e\x6a\x73');
 }
 
 const KEYS = {
-  isLocked: 'isLocked',
-  passwordHash: 'passwordHash',
-  passwordSalt: 'passwordSalt',
-  passwordIterations: 'passwordIterations',
-  requiresPasswordSetup: 'requiresPasswordSetup',
-  autoLockMinutes: 'autoLockMinutes',
-  whitelist: 'whitelist',
-  failedAttempts: 'failedAttempts',
-  lockoutUntil: 'lockoutUntil',
-  logs: 'logs',
-  settingsVersion: 'settingsVersion',
-  maxAttempts: 'maxAttempts',
-  lockoutMinutes: 'lockoutMinutes',
-  unlockSessionMinutes: 'unlockSessionMinutes',
-  unlockUntil: 'unlockUntil',
-  lockOnWindowBlur: 'lockOnWindowBlur',
-  blurRegionsByDomain: 'blurRegionsByDomain',
-  defaultRegionMode: 'defaultRegionMode',
-  maskPageIdentity: 'maskPageIdentity',
-  domainProfiles: 'domainProfiles',
-  requirePasswordOnDomainChange: 'requirePasswordOnDomainChange',
-  sessionAccessHosts: 'sessionAccessHosts',
-  biometricCredentialId: 'biometricCredentialId',
-  biometricPublicKey: 'biometricPublicKey',
-  biometricAlgorithm: 'biometricAlgorithm',
-  biometricTransports: 'biometricTransports',
-  biometricCreatedAt: 'biometricCreatedAt',
-  pendingBiometricRequest: 'pendingBiometricRequest'
+  isLocked: '\x69\x73\x4c\x6f\x63\x6b\x65\x64',
+  passwordHash: '\x70\x61\x73\x73\x77\x6f\x72\x64\x48\x61\x73\x68',
+  passwordSalt: '\x70\x61\x73\x73\x77\x6f\x72\x64\x53\x61\x6c\x74',
+  passwordIterations: '\x70\x61\x73\x73\x77\x6f\x72\x64\x49\x74\x65\x72\x61\x74\x69\x6f\x6e\x73',
+  requiresPasswordSetup: '\x72\x65\x71\x75\x69\x72\x65\x73\x50\x61\x73\x73\x77\x6f\x72\x64\x53\x65\x74\x75\x70',
+  autoLockMinutes: '\x61\x75\x74\x6f\x4c\x6f\x63\x6b\x4d\x69\x6e\x75\x74\x65\x73',
+  whitelist: '\x77\x68\x69\x74\x65\x6c\x69\x73\x74',
+  failedAttempts: '\x66\x61\x69\x6c\x65\x64\x41\x74\x74\x65\x6d\x70\x74\x73',
+  lockoutUntil: '\x6c\x6f\x63\x6b\x6f\x75\x74\x55\x6e\x74\x69\x6c',
+  logs: '\x6c\x6f\x67\x73',
+  settingsVersion: '\x73\x65\x74\x74\x69\x6e\x67\x73\x56\x65\x72\x73\x69\x6f\x6e',
+  maxAttempts: '\x6d\x61\x78\x41\x74\x74\x65\x6d\x70\x74\x73',
+  lockoutMinutes: '\x6c\x6f\x63\x6b\x6f\x75\x74\x4d\x69\x6e\x75\x74\x65\x73',
+  unlockSessionMinutes: '\x75\x6e\x6c\x6f\x63\x6b\x53\x65\x73\x73\x69\x6f\x6e\x4d\x69\x6e\x75\x74\x65\x73',
+  unlockUntil: '\x75\x6e\x6c\x6f\x63\x6b\x55\x6e\x74\x69\x6c',
+  lockOnWindowBlur: '\x6c\x6f\x63\x6b\x4f\x6e\x57\x69\x6e\x64\x6f\x77\x42\x6c\x75\x72',
+  blurRegionsByDomain: '\x62\x6c\x75\x72\x52\x65\x67\x69\x6f\x6e\x73\x42\x79\x44\x6f\x6d\x61\x69\x6e',
+  defaultRegionMode: '\x64\x65\x66\x61\x75\x6c\x74\x52\x65\x67\x69\x6f\x6e\x4d\x6f\x64\x65',
+  maskPageIdentity: '\x6d\x61\x73\x6b\x50\x61\x67\x65\x49\x64\x65\x6e\x74\x69\x74\x79',
+  domainProfiles: '\x64\x6f\x6d\x61\x69\x6e\x50\x72\x6f\x66\x69\x6c\x65\x73',
+  requirePasswordOnDomainChange: '\x72\x65\x71\x75\x69\x72\x65\x50\x61\x73\x73\x77\x6f\x72\x64\x4f\x6e\x44\x6f\x6d\x61\x69\x6e\x43\x68\x61\x6e\x67\x65',
+  sessionAccessHosts: '\x73\x65\x73\x73\x69\x6f\x6e\x41\x63\x63\x65\x73\x73\x48\x6f\x73\x74\x73',
+  biometricCredentialId: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x43\x72\x65\x64\x65\x6e\x74\x69\x61\x6c\x49\x64',
+  biometricPublicKey: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x50\x75\x62\x6c\x69\x63\x4b\x65\x79',
+  biometricAlgorithm: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x41\x6c\x67\x6f\x72\x69\x74\x68\x6d',
+  biometricTransports: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x54\x72\x61\x6e\x73\x70\x6f\x72\x74\x73',
+  biometricCreatedAt: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x43\x72\x65\x61\x74\x65\x64\x41\x74',
+  pendingBiometricRequest: '\x70\x65\x6e\x64\x69\x6e\x67\x42\x69\x6f\x6d\x65\x74\x72\x69\x63\x52\x65\x71\x75\x65\x73\x74'
 };
 
 const DEFAULTS = {
@@ -45,7 +45,7 @@ const DEFAULTS = {
   lockOnWindowBlur: false,
   requiresPasswordSetup: true,
   blurRegionsByDomain: {},
-  defaultRegionMode: 'blur',
+  defaultRegionMode: '\x62\x6c\x75\x72',
   maskPageIdentity: false,
   domainProfiles: [],
   requirePasswordOnDomainChange: true,
@@ -59,17 +59,17 @@ const DEFAULTS = {
   logs: [],
   settingsVersion: 8,
   whitelist: [
-    'domain:mail.google.com',
-    'domain:calendar.google.com',
-    'pattern:https://chatgpt.com/*'
+    '\x64\x6f\x6d\x61\x69\x6e\x3a\x6d\x61\x69\x6c\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d',
+    '\x64\x6f\x6d\x61\x69\x6e\x3a\x63\x61\x6c\x65\x6e\x64\x61\x72\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d',
+    '\x70\x61\x74\x74\x65\x72\x6e\x3a\x68\x74\x74\x70\x73\x3a\x2f\x2f\x63\x68\x61\x74\x67\x70\x74\x2e\x63\x6f\x6d\x2f\x2a'
   ]
 };
 
-const REGION_MODES = ['blur', 'blackout', 'pixelate'];
+const REGION_MODES = ['\x62\x6c\x75\x72', '\x62\x6c\x61\x63\x6b\x6f\x75\x74', '\x70\x69\x78\x65\x6c\x61\x74\x65'];
 
 const ALARMS = {
-  autoLock: 'auto-lock',
-  sessionRelock: 'session-relock'
+  autoLock: '\x61\x75\x74\x6f\x2d\x6c\x6f\x63\x6b',
+  sessionRelock: '\x73\x65\x73\x73\x69\x6f\x6e\x2d\x72\x65\x6c\x6f\x63\x6b'
 };
 
 const BIOMETRIC_REQUEST_TTL_MS = 10 * 60 * 1000;
@@ -130,7 +130,7 @@ async function maybeLockAfterWindowBlur() {
   if (state[KEYS.isLocked]) return;
   if (await hasFocusedChromeWindow()) return;
 
-  await lockNow('window-blur');
+  await lockNow('\x77\x69\x6e\x64\x6f\x77\x2d\x62\x6c\x75\x72');
 }
 
 async function tr(key, values = {}) {
@@ -161,12 +161,12 @@ function fromBase64(base64) {
 }
 
 function toBase64Url(bytes) {
-  return toBase64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  return toBase64(bytes).replace(/\+/g, '\x2d').replace(/\//g, '\x5f').replace(/=+$/g, '');
 }
 
 function fromBase64Url(value) {
-  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
-  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  const normalized = String(value || '').replace(/-/g, '\x2b').replace(/_/g, '\x2f');
+  const padding = normalized.length % 4 === 0 ? '' : '\x3d'.repeat(4 - (normalized.length % 4));
   return fromBase64(normalized + padding);
 }
 
@@ -191,20 +191,20 @@ function matchesRule(rule, href) {
   try {
     const url = new URL(href);
 
-    if (normalized.startsWith('domain:')) {
+    if (normalized.startsWith('\x64\x6f\x6d\x61\x69\x6e\x3a')) {
       const domain = normalized.slice(7).trim().toLowerCase();
       return url.hostname.toLowerCase() === domain || url.hostname.toLowerCase().endsWith(`.${domain}`);
     }
 
-    if (normalized.startsWith('host:')) {
+    if (normalized.startsWith('\x68\x6f\x73\x74\x3a')) {
       return url.hostname.toLowerCase() === normalized.slice(5).trim().toLowerCase();
     }
 
-    if (normalized.startsWith('pattern:')) {
+    if (normalized.startsWith('\x70\x61\x74\x74\x65\x72\x6e\x3a')) {
       return wildcardToRegex(normalized.slice(8).trim()).test(href);
     }
 
-    if (normalized.startsWith('regex:')) {
+    if (normalized.startsWith('\x72\x65\x67\x65\x78\x3a')) {
       return new RegExp(normalized.slice(6)).test(href);
     }
 
@@ -250,17 +250,17 @@ function readStateNumber(state, key, fallback) {
 }
 
 function readStateBoolean(state, key, fallback) {
-  return typeof state[key] === 'boolean' ? state[key] : fallback;
+  return typeof state[key] === '\x62\x6f\x6f\x6c\x65\x61\x6e' ? state[key] : fallback;
 }
 
 function isPlainObject(value) {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
+  return !!value && typeof value === '\x6f\x62\x6a\x65\x63\x74' && !Array.isArray(value);
 }
 
 function normalizeBiometricTransports(transports) {
   if (!Array.isArray(transports)) return [];
 
-  const allowed = new Set(['ble', 'hybrid', 'internal', 'nfc', 'usb']);
+  const allowed = new Set(['\x62\x6c\x65', '\x68\x79\x62\x72\x69\x64', '\x69\x6e\x74\x65\x72\x6e\x61\x6c', '\x6e\x66\x63', '\x75\x73\x62']);
   return [...new Set(
     transports
       .map((transport) => String(transport || '').trim().toLowerCase())
@@ -269,9 +269,9 @@ function normalizeBiometricTransports(transports) {
 }
 
 function hasBiometricCredential(state) {
-  return typeof state[KEYS.biometricCredentialId] === 'string'
+  return typeof state[KEYS.biometricCredentialId] === '\x73\x74\x72\x69\x6e\x67'
     && !!state[KEYS.biometricCredentialId]
-    && typeof state[KEYS.biometricPublicKey] === 'string'
+    && typeof state[KEYS.biometricPublicKey] === '\x73\x74\x72\x69\x6e\x67'
     && !!state[KEYS.biometricPublicKey];
 }
 
@@ -282,18 +282,18 @@ function isSupportedBiometricAlgorithm(value) {
 function sanitizePendingBiometricRequest(value) {
   if (!isPlainObject(value)) return null;
 
-  const type = value.type === 'setup' || value.type === 'unlock' ? value.type : '';
-  const requestId = typeof value.requestId === 'string' ? value.requestId.trim() : '';
-  const challenge = typeof value.challenge === 'string' ? value.challenge.trim() : '';
+  const type = value.type === '\x73\x65\x74\x75\x70' || value.type === '\x75\x6e\x6c\x6f\x63\x6b' ? value.type : '';
+  const requestId = typeof value.requestId === '\x73\x74\x72\x69\x6e\x67' ? value.requestId.trim() : '';
+  const challenge = typeof value.challenge === '\x73\x74\x72\x69\x6e\x67' ? value.challenge.trim() : '';
   if (!type || !requestId || !challenge) return null;
 
   return {
     type,
     requestId,
     challenge,
-    createdAt: readStateNumber(value, 'createdAt', 0),
+    createdAt: readStateNumber(value, '\x63\x72\x65\x61\x74\x65\x64\x41\x74', 0),
     tabId: Number.isInteger(value.tabId) ? value.tabId : null,
-    url: typeof value.url === 'string' ? value.url : '',
+    url: typeof value.url === '\x73\x74\x72\x69\x6e\x67' ? value.url : '',
     pageOnly: !!value.pageOnly,
     useDefaultSession: value.useDefaultSession !== false,
     sessionMinutes: Number.isFinite(Number(value.sessionMinutes))
@@ -331,10 +331,10 @@ function sanitizeDomainProfile(profile, index = 0) {
   const forceLock = !!profile.forceLock;
 
   return {
-    id: typeof profile.id === 'string' && profile.id.trim()
+    id: typeof profile.id === '\x73\x74\x72\x69\x6e\x67' && profile.id.trim()
       ? profile.id.trim()
       : `profile-${index}-${crypto.randomUUID()}`,
-    name: typeof profile.name === 'string' && profile.name.trim()
+    name: typeof profile.name === '\x73\x74\x72\x69\x6e\x67' && profile.name.trim()
       ? profile.name.trim()
       : `Profile ${index + 1}`,
     match,
@@ -392,7 +392,7 @@ function sanitizeBlurRegion(region, index = 0) {
   }
 
   return {
-    id: typeof region.id === 'string' && region.id.trim()
+    id: typeof region.id === '\x73\x74\x72\x69\x6e\x67' && region.id.trim()
       ? region.id.trim()
       : `region-${index}-${crypto.randomUUID()}`,
     left,
@@ -540,19 +540,19 @@ async function resolveBiometricRequest(message, expectedType, state = null) {
 async function derivePasswordHash(password, saltBase64, iterations) {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
-    'raw',
+    '\x72\x61\x77',
     encoder.encode(password),
-    { name: 'PBKDF2' },
+    { name: '\x50\x42\x4b\x44\x46\x32' },
     false,
-    ['deriveBits']
+    ['\x64\x65\x72\x69\x76\x65\x42\x69\x74\x73']
   );
 
   const bits = await crypto.subtle.deriveBits(
     {
-      name: 'PBKDF2',
+      name: '\x50\x42\x4b\x44\x46\x32',
       salt: fromBase64(saltBase64),
       iterations,
-      hash: 'SHA-256'
+      hash: '\x53\x48\x41\x2d\x32\x35\x36'
     },
     keyMaterial,
     256
@@ -563,7 +563,7 @@ async function derivePasswordHash(password, saltBase64, iterations) {
 
 async function sha256Bytes(data) {
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const digest = await crypto.subtle.digest('\x53\x48\x41\x2d\x32\x35\x36', bytes);
   return new Uint8Array(digest);
 }
 
@@ -583,7 +583,7 @@ function concatBytes(...parts) {
 
 function readDerLength(bytes, offset) {
   if (offset >= bytes.length) {
-    throw new Error('Invalid DER length.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x6c\x65\x6e\x67\x74\x68\x2e');
   }
 
   const firstByte = bytes[offset];
@@ -596,7 +596,7 @@ function readDerLength(bytes, offset) {
 
   const lengthBytes = firstByte & 0x7f;
   if (lengthBytes < 1 || lengthBytes > 4 || (offset + 1 + lengthBytes) > bytes.length) {
-    throw new Error('Invalid DER length.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x6c\x65\x6e\x67\x74\x68\x2e');
   }
 
   let length = 0;
@@ -618,7 +618,7 @@ function normalizeDerInteger(bytes, fieldLength) {
 
   const normalized = bytes.slice(start);
   if (normalized.length > fieldLength) {
-    throw new Error('Invalid DER integer.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x69\x6e\x74\x65\x67\x65\x72\x2e');
   }
 
   const output = new Uint8Array(fieldLength);
@@ -629,36 +629,36 @@ function normalizeDerInteger(bytes, fieldLength) {
 function convertDerEcdsaSignatureToP1363(signature, fieldLength = 32) {
   const bytes = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
   if (bytes.length < 8 || bytes[0] !== 0x30) {
-    throw new Error('Invalid DER signature.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x2e');
   }
 
   const sequenceLengthInfo = readDerLength(bytes, 1);
   const sequenceEnd = sequenceLengthInfo.nextOffset + sequenceLengthInfo.length;
   if (sequenceEnd !== bytes.length) {
-    throw new Error('Invalid DER signature.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x2e');
   }
 
   let offset = sequenceLengthInfo.nextOffset;
   if (bytes[offset] !== 0x02) {
-    throw new Error('Invalid DER signature.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x2e');
   }
 
   const rLengthInfo = readDerLength(bytes, offset + 1);
   const rEnd = rLengthInfo.nextOffset + rLengthInfo.length;
   if (rEnd > bytes.length) {
-    throw new Error('Invalid DER signature.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x2e');
   }
   const r = normalizeDerInteger(bytes.slice(rLengthInfo.nextOffset, rEnd), fieldLength);
 
   offset = rEnd;
   if (bytes[offset] !== 0x02) {
-    throw new Error('Invalid DER signature.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x2e');
   }
 
   const sLengthInfo = readDerLength(bytes, offset + 1);
   const sEnd = sLengthInfo.nextOffset + sLengthInfo.length;
   if (sEnd !== bytes.length) {
-    throw new Error('Invalid DER signature.');
+    throw new Error('\x49\x6e\x76\x61\x6c\x69\x64\x20\x44\x45\x52\x20\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x2e');
   }
   const s = normalizeDerInteger(bytes.slice(sLengthInfo.nextOffset, sEnd), fieldLength);
 
@@ -690,47 +690,47 @@ function createBiometricVerificationError(genericError, reason) {
 }
 
 async function verifyBiometricAssertion(message, request, state) {
-  const genericError = await tr('background.error.biometric_verification_failed');
+  const genericError = await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x76\x65\x72\x69\x66\x69\x63\x61\x74\x69\x6f\x6e\x5f\x66\x61\x69\x6c\x65\x64');
   const fail = (reason) => {
     throw createBiometricVerificationError(genericError, reason);
   };
 
   if (!hasBiometricCredential(state)) {
-    throw new Error(await tr('background.error.biometric_not_setup'));
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x6e\x6f\x74\x5f\x73\x65\x74\x75\x70'));
   }
 
   const biometricAlgorithm = Number(state[KEYS.biometricAlgorithm] || DEFAULTS.biometricAlgorithm);
   if (!isSupportedBiometricAlgorithm(biometricAlgorithm)) {
-    fail('unsupported_algorithm');
+    fail('\x75\x6e\x73\x75\x70\x70\x6f\x72\x74\x65\x64\x5f\x61\x6c\x67\x6f\x72\x69\x74\x68\x6d');
   }
 
   const rawId = fromBase64Url(message.credentialId);
   if (toBase64Url(rawId) !== state[KEYS.biometricCredentialId]) {
-    fail('credential_id_mismatch');
+    fail('\x63\x72\x65\x64\x65\x6e\x74\x69\x61\x6c\x5f\x69\x64\x5f\x6d\x69\x73\x6d\x61\x74\x63\x68');
   }
 
   const clientDataJSON = fromBase64Url(message.clientDataJSON);
   const authenticatorData = fromBase64Url(message.authenticatorData);
   const signature = fromBase64Url(message.signature);
   if (authenticatorData.length < 37 || signature.length === 0) {
-    fail('malformed_assertion');
+    fail('\x6d\x61\x6c\x66\x6f\x72\x6d\x65\x64\x5f\x61\x73\x73\x65\x72\x74\x69\x6f\x6e');
   }
 
   let clientData = null;
   try {
     clientData = JSON.parse(new TextDecoder().decode(clientDataJSON));
   } catch {
-    fail('client_data_parse_failed');
+    fail('\x63\x6c\x69\x65\x6e\x74\x5f\x64\x61\x74\x61\x5f\x70\x61\x72\x73\x65\x5f\x66\x61\x69\x6c\x65\x64');
   }
 
-  if (clientData?.type !== 'webauthn.get') {
-    fail('client_data_type_mismatch');
+  if (clientData?.type !== '\x77\x65\x62\x61\x75\x74\x68\x6e\x2e\x67\x65\x74') {
+    fail('\x63\x6c\x69\x65\x6e\x74\x5f\x64\x61\x74\x61\x5f\x74\x79\x70\x65\x5f\x6d\x69\x73\x6d\x61\x74\x63\x68');
   }
   if (clientData?.challenge !== request.challenge) {
-    fail('challenge_mismatch');
+    fail('\x63\x68\x61\x6c\x6c\x65\x6e\x67\x65\x5f\x6d\x69\x73\x6d\x61\x74\x63\x68');
   }
   if (clientData?.origin !== getExtensionOrigin()) {
-    fail('origin_mismatch');
+    fail('\x6f\x72\x69\x67\x69\x6e\x5f\x6d\x69\x73\x6d\x61\x74\x63\x68');
   }
 
   const actualRpIdHash = authenticatorData.slice(0, 32);
@@ -739,14 +739,14 @@ async function verifyBiometricAssertion(message, request, state) {
     expectedRpIdHash.every((byte, index) => actualRpIdHash[index] === byte)
   ));
   if (!matchesRpIdHash) {
-    fail('rp_id_hash_mismatch');
+    fail('\x72\x70\x5f\x69\x64\x5f\x68\x61\x73\x68\x5f\x6d\x69\x73\x6d\x61\x74\x63\x68');
   }
 
   const flags = authenticatorData[32];
   const userPresent = (flags & 0x01) !== 0;
   const userVerified = (flags & 0x04) !== 0;
   if (!userPresent || !userVerified) {
-    fail('user_presence_or_verification_missing');
+    fail('\x75\x73\x65\x72\x5f\x70\x72\x65\x73\x65\x6e\x63\x65\x5f\x6f\x72\x5f\x76\x65\x72\x69\x66\x69\x63\x61\x74\x69\x6f\x6e\x5f\x6d\x69\x73\x73\x69\x6e\x67');
   }
 
   const clientDataHash = await sha256Bytes(clientDataJSON);
@@ -758,26 +758,26 @@ async function verifyBiometricAssertion(message, request, state) {
   try {
     if (biometricAlgorithm === BIOMETRIC_ALGORITHMS.ES256) {
       verificationKey = await crypto.subtle.importKey(
-        'spki',
+        '\x73\x70\x6b\x69',
         fromBase64(state[KEYS.biometricPublicKey]),
-        { name: 'ECDSA', namedCurve: 'P-256' },
+        { name: '\x45\x43\x44\x53\x41', namedCurve: '\x50\x2d\x32\x35\x36' },
         false,
-        ['verify']
+        ['\x76\x65\x72\x69\x66\x79']
       );
-      verifyAlgorithm = { name: 'ECDSA', hash: 'SHA-256' };
+      verifyAlgorithm = { name: '\x45\x43\x44\x53\x41', hash: '\x53\x48\x41\x2d\x32\x35\x36' };
       normalizedSignature = convertDerEcdsaSignatureToP1363(signature, 32);
     } else {
       verificationKey = await crypto.subtle.importKey(
-        'spki',
+        '\x73\x70\x6b\x69',
         fromBase64(state[KEYS.biometricPublicKey]),
-        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        { name: '\x52\x53\x41\x53\x53\x41\x2d\x50\x4b\x43\x53\x31\x2d\x76\x31\x5f\x35', hash: '\x53\x48\x41\x2d\x32\x35\x36' },
         false,
-        ['verify']
+        ['\x76\x65\x72\x69\x66\x79']
       );
-      verifyAlgorithm = { name: 'RSASSA-PKCS1-v1_5' };
+      verifyAlgorithm = { name: '\x52\x53\x41\x53\x53\x41\x2d\x50\x4b\x43\x53\x31\x2d\x76\x31\x5f\x35' };
     }
   } catch {
-    fail('public_key_import_or_signature_parse_failed');
+    fail('\x70\x75\x62\x6c\x69\x63\x5f\x6b\x65\x79\x5f\x69\x6d\x70\x6f\x72\x74\x5f\x6f\x72\x5f\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x5f\x70\x61\x72\x73\x65\x5f\x66\x61\x69\x6c\x65\x64');
   }
 
   const verified = await crypto.subtle.verify(
@@ -788,7 +788,7 @@ async function verifyBiometricAssertion(message, request, state) {
   );
 
   if (!verified) {
-    fail('signature_mismatch');
+    fail('\x73\x69\x67\x6e\x61\x74\x75\x72\x65\x5f\x6d\x69\x73\x6d\x61\x74\x63\x68');
   }
 }
 
@@ -797,7 +797,7 @@ async function notifyBiometricResult(request, payload) {
 
   try {
     await chrome.tabs.sendMessage(request.tabId, {
-      type: 'BIOMETRIC_AUTH_RESULT',
+      type: '\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x41\x55\x54\x48\x5f\x52\x45\x53\x55\x4c\x54',
       ...payload
     });
   } catch {
@@ -809,7 +809,7 @@ async function openBiometricWindow(requestId) {
   const url = chrome.runtime.getURL(`biometric.html?requestId=${encodeURIComponent(requestId)}`);
   await chrome.windows.create({
     url,
-    type: 'popup',
+    type: '\x70\x6f\x70\x75\x70',
     focused: true,
     width: 460,
     height: 640
@@ -820,11 +820,11 @@ async function beginBiometricSetup() {
   const state = await getState();
   const settings = getSettingsSnapshot(state);
   if (settings.requiresPasswordSetup) {
-    throw new Error(await tr('background.error.first_setup_required'));
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x66\x69\x72\x73\x74\x5f\x73\x65\x74\x75\x70\x5f\x72\x65\x71\x75\x69\x72\x65\x64'));
   }
 
   const request = {
-    type: 'setup',
+    type: '\x73\x65\x74\x75\x70',
     requestId: crypto.randomUUID(),
     challenge: toBase64Url(randomBytes(32)),
     createdAt: now(),
@@ -850,17 +850,17 @@ async function beginBiometricUnlock(sender, url, pageOnly, useDefaultSession, se
   const settings = getSettingsSnapshot(state);
 
   if (settings.requiresPasswordSetup) {
-    throw new Error(await tr('background.error.first_setup_before_unlock'));
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x66\x69\x72\x73\x74\x5f\x73\x65\x74\x75\x70\x5f\x62\x65\x66\x6f\x72\x65\x5f\x75\x6e\x6c\x6f\x63\x6b'));
   }
   if (!hasBiometricCredential(state)) {
-    throw new Error(await tr('background.error.biometric_not_setup'));
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x6e\x6f\x74\x5f\x73\x65\x74\x75\x70'));
   }
   if (!Number.isInteger(sender?.tab?.id)) {
-    throw new Error(await tr('background.error.biometric_tab_missing'));
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x74\x61\x62\x5f\x6d\x69\x73\x73\x69\x6e\x67'));
   }
 
   const request = {
-    type: 'unlock',
+    type: '\x75\x6e\x6c\x6f\x63\x6b',
     requestId: crypto.randomUUID(),
     challenge: toBase64Url(randomBytes(32)),
     createdAt: now(),
@@ -883,16 +883,16 @@ async function beginBiometricUnlock(sender, url, pageOnly, useDefaultSession, se
 
 async function completeBiometricSetup(message) {
   const state = await getState();
-  const request = await resolveBiometricRequest(message, 'setup', state);
-  if (!request || request.type !== 'setup' || request.requestId !== message.requestId) {
-    throw new Error(await tr('background.error.biometric_request_missing'));
+  const request = await resolveBiometricRequest(message, '\x73\x65\x74\x75\x70', state);
+  if (!request || request.type !== '\x73\x65\x74\x75\x70' || request.requestId !== message.requestId) {
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x72\x65\x71\x75\x65\x73\x74\x5f\x6d\x69\x73\x73\x69\x6e\x67'));
   }
 
   const credentialId = String(message.credentialId || '').trim();
   const publicKey = String(message.publicKey || '').trim();
   const algorithm = Number(message.algorithm);
   if (!credentialId || !publicKey || !isSupportedBiometricAlgorithm(algorithm)) {
-    throw new Error(await tr('background.error.biometric_public_key_missing'));
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x70\x75\x62\x6c\x69\x63\x5f\x6b\x65\x79\x5f\x6d\x69\x73\x73\x69\x6e\x67'));
   }
 
   await setState({
@@ -904,27 +904,27 @@ async function completeBiometricSetup(message) {
   });
   suppressWindowBlurLock();
   await clearPendingBiometricRequest(request.requestId);
-  await appendLog({ type: 'security', action: 'biometric-registered' });
+  await appendLog({ type: '\x73\x65\x63\x75\x72\x69\x74\x79', action: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x2d\x72\x65\x67\x69\x73\x74\x65\x72\x65\x64' });
   await broadcastLockState();
 }
 
 async function completeBiometricUnlock(message) {
   const state = await getState();
   const settings = getSettingsSnapshot(state);
-  const request = await resolveBiometricRequest(message, 'unlock', state);
-  if (!request || request.type !== 'unlock' || request.requestId !== message.requestId) {
-    throw new Error(await tr('background.error.biometric_request_missing'));
+  const request = await resolveBiometricRequest(message, '\x75\x6e\x6c\x6f\x63\x6b', state);
+  if (!request || request.type !== '\x75\x6e\x6c\x6f\x63\x6b' || request.requestId !== message.requestId) {
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x72\x65\x71\x75\x65\x73\x74\x5f\x6d\x69\x73\x73\x69\x6e\x67'));
   }
 
   try {
     await verifyBiometricAssertion(message, request, state);
   } catch (error) {
     await appendLog({
-      type: 'security',
-      action: 'biometric-verification-failed',
+      type: '\x73\x65\x63\x75\x72\x69\x74\x79',
+      action: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x2d\x76\x65\x72\x69\x66\x69\x63\x61\x74\x69\x6f\x6e\x2d\x66\x61\x69\x6c\x65\x64',
       url: safeUrlForLog(request.url),
       meta: {
-        reason: error?.biometricReason || 'unknown',
+        reason: error?.biometricReason || '\x75\x6e\x6b\x6e\x6f\x77\x6e',
         algorithm: Number(state[KEYS.biometricAlgorithm] || DEFAULTS.biometricAlgorithm)
       }
     });
@@ -941,8 +941,8 @@ async function completeBiometricUnlock(message) {
     );
 
     await appendLog({
-      type: 'unlock',
-      source: 'profile-biometric',
+      type: '\x75\x6e\x6c\x6f\x63\x6b',
+      source: '\x70\x72\x6f\x66\x69\x6c\x65\x2d\x62\x69\x6f\x6d\x65\x74\x72\x69\x63',
       url: safeUrlForLog(request.url),
       meta: {
         profileId: matchedProfile?.id || '',
@@ -955,7 +955,7 @@ async function completeBiometricUnlock(message) {
     await notifyBiometricResult(request, {
       ok: true,
       success: true,
-      mode: 'profile',
+      mode: '\x70\x72\x6f\x66\x69\x6c\x65',
       profileId: matchedProfile?.id || '',
       profileName: matchedProfile?.name || '',
       pageUnlockMinutes: effectivePageUnlockMinutes
@@ -972,7 +972,7 @@ async function completeBiometricUnlock(message) {
 
   await unlockNow(
     state,
-    'biometric',
+    '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63',
     request.url,
     requestedSessionMinutes,
     settings.requirePasswordOnDomainChange
@@ -982,7 +982,7 @@ async function completeBiometricUnlock(message) {
   await notifyBiometricResult(request, {
     ok: true,
     success: true,
-    mode: 'global',
+    mode: '\x67\x6c\x6f\x62\x61\x6c',
     sessionMinutes: requestedSessionMinutes
   });
 }
@@ -995,11 +995,11 @@ async function cancelBiometricRequest(requestId, errorMessage = '') {
   }
 
   await clearPendingBiometricRequest(request.requestId);
-  if (request.type === 'unlock') {
+  if (request.type === '\x75\x6e\x6c\x6f\x63\x6b') {
     await notifyBiometricResult(request, {
       ok: true,
       success: false,
-      error: errorMessage || await tr('background.error.biometric_cancelled')
+      error: errorMessage || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x63\x61\x6e\x63\x65\x6c\x6c\x65\x64')
     });
   }
 }
@@ -1007,10 +1007,10 @@ async function cancelBiometricRequest(requestId, errorMessage = '') {
 async function ensureInitialized() {
   const state = await getState();
   const updates = {};
-  const hasPassword = typeof state[KEYS.passwordHash] === 'string' && state[KEYS.passwordHash];
-  const hasSalt = typeof state[KEYS.passwordSalt] === 'string' && state[KEYS.passwordSalt];
+  const hasPassword = typeof state[KEYS.passwordHash] === '\x73\x74\x72\x69\x6e\x67' && state[KEYS.passwordHash];
+  const hasSalt = typeof state[KEYS.passwordSalt] === '\x73\x74\x72\x69\x6e\x67' && state[KEYS.passwordSalt];
 
-  if (typeof state[KEYS.isLocked] !== 'boolean') updates[KEYS.isLocked] = true;
+  if (typeof state[KEYS.isLocked] !== '\x62\x6f\x6f\x6c\x65\x61\x6e') updates[KEYS.isLocked] = true;
   if (!Number.isFinite(Number(state[KEYS.autoLockMinutes]))) updates[KEYS.autoLockMinutes] = DEFAULTS.autoLockMinutes;
   if (!Array.isArray(state[KEYS.whitelist])) updates[KEYS.whitelist] = [...DEFAULTS.whitelist];
   if (!Array.isArray(state[KEYS.logs])) updates[KEYS.logs] = [...DEFAULTS.logs];
@@ -1021,11 +1021,11 @@ async function ensureInitialized() {
   if (!Number.isFinite(Number(state[KEYS.unlockSessionMinutes]))) updates[KEYS.unlockSessionMinutes] = DEFAULTS.unlockSessionMinutes;
   if (!Number.isFinite(Number(state[KEYS.unlockUntil]))) updates[KEYS.unlockUntil] = DEFAULTS.unlockUntil;
   if (!Number.isFinite(Number(state[KEYS.passwordIterations]))) updates[KEYS.passwordIterations] = DEFAULTS.passwordIterations;
-  if (typeof state[KEYS.lockOnWindowBlur] !== 'boolean') updates[KEYS.lockOnWindowBlur] = DEFAULTS.lockOnWindowBlur;
+  if (typeof state[KEYS.lockOnWindowBlur] !== '\x62\x6f\x6f\x6c\x65\x61\x6e') updates[KEYS.lockOnWindowBlur] = DEFAULTS.lockOnWindowBlur;
   if (!REGION_MODES.includes(String(state[KEYS.defaultRegionMode] || '').trim().toLowerCase())) {
     updates[KEYS.defaultRegionMode] = DEFAULTS.defaultRegionMode;
   }
-  if (typeof state[KEYS.maskPageIdentity] !== 'boolean') {
+  if (typeof state[KEYS.maskPageIdentity] !== '\x62\x6f\x6f\x6c\x65\x61\x6e') {
     updates[KEYS.maskPageIdentity] = DEFAULTS.maskPageIdentity;
   }
   if (!Array.isArray(state[KEYS.domainProfiles])) {
@@ -1036,7 +1036,7 @@ async function ensureInitialized() {
       updates[KEYS.domainProfiles] = normalizedProfiles;
     }
   }
-  if (typeof state[KEYS.requirePasswordOnDomainChange] !== 'boolean') {
+  if (typeof state[KEYS.requirePasswordOnDomainChange] !== '\x62\x6f\x6f\x6c\x65\x61\x6e') {
     updates[KEYS.requirePasswordOnDomainChange] = DEFAULTS.requirePasswordOnDomainChange;
   }
   if (!Array.isArray(state[KEYS.sessionAccessHosts])) {
@@ -1056,8 +1056,8 @@ async function ensureInitialized() {
     }
   }
 
-  const hasBiometricId = typeof state[KEYS.biometricCredentialId] === 'string' && !!state[KEYS.biometricCredentialId];
-  const hasBiometricKey = typeof state[KEYS.biometricPublicKey] === 'string' && !!state[KEYS.biometricPublicKey];
+  const hasBiometricId = typeof state[KEYS.biometricCredentialId] === '\x73\x74\x72\x69\x6e\x67' && !!state[KEYS.biometricCredentialId];
+  const hasBiometricKey = typeof state[KEYS.biometricPublicKey] === '\x73\x74\x72\x69\x6e\x67' && !!state[KEYS.biometricPublicKey];
   if (!hasBiometricId || !hasBiometricKey) {
     updates[KEYS.biometricCredentialId] = '';
     updates[KEYS.biometricPublicKey] = '';
@@ -1103,7 +1103,7 @@ async function ensureInitialized() {
     await setState(updates);
   }
 
-  await chrome.storage.local.remove('closeOnLockout');
+  await chrome.storage.local.remove('\x63\x6c\x6f\x73\x65\x4f\x6e\x4c\x6f\x63\x6b\x6f\x75\x74');
 }
 
 function safeUrlForLog(url) {
@@ -1127,7 +1127,7 @@ async function appendLog(entry) {
 }
 
 function getEligibleTabs(tabs) {
-  return tabs.filter((tab) => tab.id && typeof tab.url === 'string' && /^https?:/i.test(tab.url));
+  return tabs.filter((tab) => tab.id && typeof tab.url === '\x73\x74\x72\x69\x6e\x67' && /^https?:/i.test(tab.url));
 }
 
 async function broadcastLockState() {
@@ -1138,7 +1138,7 @@ async function broadcastLockState() {
 
   await Promise.allSettled(
     tabs.map((tab) => chrome.tabs.sendMessage(tab.id, {
-      type: 'LOCK_STATE_CHANGED',
+      type: '\x4c\x4f\x43\x4b\x5f\x53\x54\x41\x54\x45\x5f\x43\x48\x41\x4e\x47\x45\x44',
       isLocked: !!state[KEYS.isLocked],
       whitelist: settings.whitelist,
       failedAttempts: readStateNumber(state, KEYS.failedAttempts, DEFAULTS.failedAttempts),
@@ -1165,18 +1165,18 @@ async function syncSessionAlarm(unlockUntil) {
   }
 }
 
-async function lockNow(reason = 'manual', meta = {}) {
+async function lockNow(reason = '\x6d\x61\x6e\x75\x61\x6c', meta = {}) {
   await syncSessionAlarm(0);
   await setState({
     [KEYS.isLocked]: true,
     [KEYS.unlockUntil]: 0,
     [KEYS.sessionAccessHosts]: []
   });
-  await appendLog({ type: 'lock', reason, meta });
+  await appendLog({ type: '\x6c\x6f\x63\x6b', reason, meta });
   await broadcastLockState();
 }
 
-async function unlockNow(state, source = 'password', tabUrl = '', sessionMinutes = 0, requirePasswordOnDomainChange = DEFAULTS.requirePasswordOnDomainChange) {
+async function unlockNow(state, source = '\x70\x61\x73\x73\x77\x6f\x72\x64', tabUrl = '', sessionMinutes = 0, requirePasswordOnDomainChange = DEFAULTS.requirePasswordOnDomainChange) {
   const normalizedMinutes = clampInteger(sessionMinutes, 0, 1440, DEFAULTS.unlockSessionMinutes);
   const unlockUntil = normalizedMinutes > 0 ? now() + (normalizedMinutes * 60 * 1000) : 0;
   const latestState = state || await getState();
@@ -1195,7 +1195,7 @@ async function unlockNow(state, source = 'password', tabUrl = '', sessionMinutes
   });
   await syncSessionAlarm(unlockUntil);
   await appendLog({
-    type: 'unlock',
+    type: '\x75\x6e\x6c\x6f\x63\x6b',
     source,
     sessionMinutes: normalizedMinutes,
     url: safeUrlForLog(tabUrl)
@@ -1209,7 +1209,7 @@ async function handleFailedPasswordAttempt(state, settings, url = '', meta = {})
   let response = {
     ok: true,
     success: false,
-    error: await tr('background.error.wrong_password'),
+    error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x77\x72\x6f\x6e\x67\x5f\x70\x61\x73\x73\x77\x6f\x72\x64'),
     failedAttempts,
     maxAttempts: settings.maxAttempts
   };
@@ -1221,7 +1221,7 @@ async function handleFailedPasswordAttempt(state, settings, url = '', meta = {})
     response = {
       ok: true,
       success: false,
-      error: await tr('background.error.lockout_activated'),
+      error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x6c\x6f\x63\x6b\x6f\x75\x74\x5f\x61\x63\x74\x69\x76\x61\x74\x65\x64'),
       failedAttempts: settings.maxAttempts,
       maxAttempts: settings.maxAttempts,
       remainingMs: until - now()
@@ -1230,16 +1230,16 @@ async function handleFailedPasswordAttempt(state, settings, url = '', meta = {})
 
   await setState(updates);
   await appendLog({
-    type: 'security',
-    action: 'failed-unlock',
+    type: '\x73\x65\x63\x75\x72\x69\x74\x79',
+    action: '\x66\x61\x69\x6c\x65\x64\x2d\x75\x6e\x6c\x6f\x63\x6b',
     url: safeUrlForLog(url),
     meta
   });
 
   if (failedAttempts >= settings.maxAttempts) {
     await appendLog({
-      type: 'security',
-      action: 'lockout-activated',
+      type: '\x73\x65\x63\x75\x72\x69\x74\x79',
+      action: '\x6c\x6f\x63\x6b\x6f\x75\x74\x2d\x61\x63\x74\x69\x76\x61\x74\x65\x64',
       meta
     });
   }
@@ -1256,7 +1256,7 @@ async function verifyPasswordOnly(state, settings, password, tabUrl = '', meta =
     return {
       ok: true,
       success: false,
-      error: await tr('background.error.temp_locked'),
+      error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x74\x65\x6d\x70\x5f\x6c\x6f\x63\x6b\x65\x64'),
       remainingMs
     };
   }
@@ -1285,8 +1285,8 @@ async function verifyPasswordOnly(state, settings, password, tabUrl = '', meta =
   }
 
   await appendLog({
-    type: 'unlock',
-    source: 'profile-auth',
+    type: '\x75\x6e\x6c\x6f\x63\x6b',
+    source: '\x70\x72\x6f\x66\x69\x6c\x65\x2d\x61\x75\x74\x68',
     url: safeUrlForLog(tabUrl),
     meta
   });
@@ -1294,10 +1294,10 @@ async function verifyPasswordOnly(state, settings, password, tabUrl = '', meta =
   return { ok: true, success: true };
 }
 
-async function setUnlockTimer(sessionMinutes, source = 'popup-session') {
+async function setUnlockTimer(sessionMinutes, source = '\x70\x6f\x70\x75\x70\x2d\x73\x65\x73\x73\x69\x6f\x6e') {
   const state = await getState();
   if (state[KEYS.isLocked]) {
-    throw new Error(await tr('background.error.must_unlock_first'));
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x6d\x75\x73\x74\x5f\x75\x6e\x6c\x6f\x63\x6b\x5f\x66\x69\x72\x73\x74'));
   }
 
   const normalizedMinutes = clampInteger(sessionMinutes, 0, 1440, DEFAULTS.unlockSessionMinutes);
@@ -1306,8 +1306,8 @@ async function setUnlockTimer(sessionMinutes, source = 'popup-session') {
   await setState({ [KEYS.unlockUntil]: unlockUntil });
   await syncSessionAlarm(unlockUntil);
   await appendLog({
-    type: 'session',
-    action: 'timer-updated',
+    type: '\x73\x65\x73\x73\x69\x6f\x6e',
+    action: '\x74\x69\x6d\x65\x72\x2d\x75\x70\x64\x61\x74\x65\x64',
     source,
     sessionMinutes: normalizedMinutes
   });
@@ -1368,73 +1368,73 @@ function pickConfigValue(config, key) {
 
 function normalizeImportedConfig(config) {
   if (!isPlainObject(config)) {
-    throw new Error('TRANSLATE_INVALID_CONFIG');
+    throw new Error('\x54\x52\x41\x4e\x53\x4c\x41\x54\x45\x5f\x49\x4e\x56\x41\x4c\x49\x44\x5f\x43\x4f\x4e\x46\x49\x47');
   }
 
   const updates = {};
   let touched = false;
 
-  const autoLockMinutes = pickConfigValue(config, 'autoLockMinutes');
+  const autoLockMinutes = pickConfigValue(config, '\x61\x75\x74\x6f\x4c\x6f\x63\x6b\x4d\x69\x6e\x75\x74\x65\x73');
   if (autoLockMinutes !== undefined) {
     updates[KEYS.autoLockMinutes] = clampInteger(autoLockMinutes, 1, 1440, DEFAULTS.autoLockMinutes);
     touched = true;
   }
 
-  const whitelist = pickConfigValue(config, 'whitelist');
+  const whitelist = pickConfigValue(config, '\x77\x68\x69\x74\x65\x6c\x69\x73\x74');
   if (whitelist !== undefined) {
     updates[KEYS.whitelist] = normalizeWhitelist(whitelist);
     touched = true;
   }
 
-  const maxAttempts = pickConfigValue(config, 'maxAttempts');
+  const maxAttempts = pickConfigValue(config, '\x6d\x61\x78\x41\x74\x74\x65\x6d\x70\x74\x73');
   if (maxAttempts !== undefined) {
     updates[KEYS.maxAttempts] = clampInteger(maxAttempts, 1, 20, DEFAULTS.maxAttempts);
     touched = true;
   }
 
-  const lockoutMinutes = pickConfigValue(config, 'lockoutMinutes');
+  const lockoutMinutes = pickConfigValue(config, '\x6c\x6f\x63\x6b\x6f\x75\x74\x4d\x69\x6e\x75\x74\x65\x73');
   if (lockoutMinutes !== undefined) {
     updates[KEYS.lockoutMinutes] = clampInteger(lockoutMinutes, 1, 1440, DEFAULTS.lockoutMinutes);
     touched = true;
   }
 
-  const unlockSessionMinutes = pickConfigValue(config, 'unlockSessionMinutes');
+  const unlockSessionMinutes = pickConfigValue(config, '\x75\x6e\x6c\x6f\x63\x6b\x53\x65\x73\x73\x69\x6f\x6e\x4d\x69\x6e\x75\x74\x65\x73');
   if (unlockSessionMinutes !== undefined) {
     updates[KEYS.unlockSessionMinutes] = clampInteger(unlockSessionMinutes, 0, 1440, DEFAULTS.unlockSessionMinutes);
     touched = true;
   }
 
-  const requirePasswordOnDomainChange = pickConfigValue(config, 'requirePasswordOnDomainChange');
+  const requirePasswordOnDomainChange = pickConfigValue(config, '\x72\x65\x71\x75\x69\x72\x65\x50\x61\x73\x73\x77\x6f\x72\x64\x4f\x6e\x44\x6f\x6d\x61\x69\x6e\x43\x68\x61\x6e\x67\x65');
   if (requirePasswordOnDomainChange !== undefined) {
     updates[KEYS.requirePasswordOnDomainChange] = !!requirePasswordOnDomainChange;
     touched = true;
   }
 
-  const lockOnWindowBlur = pickConfigValue(config, 'lockOnWindowBlur');
+  const lockOnWindowBlur = pickConfigValue(config, '\x6c\x6f\x63\x6b\x4f\x6e\x57\x69\x6e\x64\x6f\x77\x42\x6c\x75\x72');
   if (lockOnWindowBlur !== undefined) {
     updates[KEYS.lockOnWindowBlur] = !!lockOnWindowBlur;
     touched = true;
   }
 
-  const defaultRegionMode = pickConfigValue(config, 'defaultRegionMode');
+  const defaultRegionMode = pickConfigValue(config, '\x64\x65\x66\x61\x75\x6c\x74\x52\x65\x67\x69\x6f\x6e\x4d\x6f\x64\x65');
   if (defaultRegionMode !== undefined) {
     updates[KEYS.defaultRegionMode] = normalizeRegionMode(defaultRegionMode, DEFAULTS.defaultRegionMode);
     touched = true;
   }
 
-  const maskPageIdentity = pickConfigValue(config, 'maskPageIdentity');
+  const maskPageIdentity = pickConfigValue(config, '\x6d\x61\x73\x6b\x50\x61\x67\x65\x49\x64\x65\x6e\x74\x69\x74\x79');
   if (maskPageIdentity !== undefined) {
     updates[KEYS.maskPageIdentity] = !!maskPageIdentity;
     touched = true;
   }
 
-  const domainProfiles = pickConfigValue(config, 'domainProfiles');
+  const domainProfiles = pickConfigValue(config, '\x64\x6f\x6d\x61\x69\x6e\x50\x72\x6f\x66\x69\x6c\x65\x73');
   if (domainProfiles !== undefined) {
     updates[KEYS.domainProfiles] = normalizeDomainProfiles(domainProfiles);
     touched = true;
   }
 
-  const blurRegionsByDomain = pickConfigValue(config, 'blurRegionsByDomain');
+  const blurRegionsByDomain = pickConfigValue(config, '\x62\x6c\x75\x72\x52\x65\x67\x69\x6f\x6e\x73\x42\x79\x44\x6f\x6d\x61\x69\x6e');
   if (blurRegionsByDomain !== undefined) {
     updates[KEYS.blurRegionsByDomain] = normalizeBlurRegionsByDomain(blurRegionsByDomain);
     touched = true;
@@ -1445,7 +1445,7 @@ function normalizeImportedConfig(config) {
   }
 
   if (!touched) {
-    throw new Error('TRANSLATE_NO_IMPORT_FIELDS');
+    throw new Error('\x54\x52\x41\x4e\x53\x4c\x41\x54\x45\x5f\x4e\x4f\x5f\x49\x4d\x50\x4f\x52\x54\x5f\x46\x49\x45\x4c\x44\x53');
   }
 
   return updates;
@@ -1483,7 +1483,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     await broadcastLockState();
     return;
   }
-  await lockNow('startup');
+  await lockNow('\x73\x74\x61\x72\x74\x75\x70');
 });
 
 chrome.runtime.onStartup.addListener(async () => {
@@ -1494,7 +1494,7 @@ chrome.runtime.onStartup.addListener(async () => {
     await broadcastLockState();
     return;
   }
-  await lockNow('startup');
+  await lockNow('\x73\x74\x61\x72\x74\x75\x70');
 });
 
 chrome.idle.setDetectionInterval(60);
@@ -1503,12 +1503,12 @@ chrome.idle.onStateChanged.addListener(async (idleState) => {
   const current = await getState();
   const minutes = clampInteger(current[KEYS.autoLockMinutes], 1, 1440, DEFAULTS.autoLockMinutes);
 
-  if (idleState === 'idle' || idleState === 'locked') {
+  if (idleState === '\x69\x64\x6c\x65' || idleState === '\x6c\x6f\x63\x6b\x65\x64') {
     chrome.alarms.create(ALARMS.autoLock, { delayInMinutes: minutes });
     return;
   }
 
-  if (idleState === 'active') {
+  if (idleState === '\x61\x63\x74\x69\x76\x65') {
     chrome.alarms.clear(ALARMS.autoLock);
   }
 });
@@ -1523,31 +1523,31 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
 });
 
 chrome.windows.onBoundsChanged.addListener(async (window) => {
-  if (!window || window.state !== 'minimized') return;
-  if (window.type && window.type !== 'normal') return;
+  if (!window || window.state !== '\x6d\x69\x6e\x69\x6d\x69\x7a\x65\x64') return;
+  if (window.type && window.type !== '\x6e\x6f\x72\x6d\x61\x6c') return;
 
   await ensureInitialized();
   const state = await getState();
   if (!readStateBoolean(state, KEYS.lockOnWindowBlur, DEFAULTS.lockOnWindowBlur)) return;
   if (state[KEYS.isLocked]) return;
 
-  await lockNow('window-minimized', { windowId: window.id || null });
+  await lockNow('\x77\x69\x6e\x64\x6f\x77\x2d\x6d\x69\x6e\x69\x6d\x69\x7a\x65\x64', { windowId: window.id || null });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === ALARMS.autoLock) {
-    await lockNow('idle-timeout');
+    await lockNow('\x69\x64\x6c\x65\x2d\x74\x69\x6d\x65\x6f\x75\x74');
     return;
   }
 
   if (alarm.name === ALARMS.sessionRelock) {
-    await lockNow('session-expired');
+    await lockNow('\x73\x65\x73\x73\x69\x6f\x6e\x2d\x65\x78\x70\x69\x72\x65\x64');
   }
 });
 
 chrome.commands.onCommand.addListener(async (command) => {
-  if (command === 'panic-lock') {
-    await lockNow('panic-hotkey');
+  if (command === '\x70\x61\x6e\x69\x63\x2d\x6c\x6f\x63\x6b') {
+    await lockNow('\x70\x61\x6e\x69\x63\x2d\x68\x6f\x74\x6b\x65\x79');
   }
 });
 
@@ -1559,15 +1559,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const lockoutUntil = readStateNumber(state, KEYS.lockoutUntil, DEFAULTS.lockoutUntil);
     const remainingMs = Math.max(0, lockoutUntil - now());
 
-    if (message.type === 'GET_STATE') {
+    if (message.type === '\x47\x45\x54\x5f\x53\x54\x41\x54\x45') {
       sendResponse(buildStateResponse(state));
       return;
     }
 
-    if (message.type === 'GET_BIOMETRIC_CONTEXT') {
+    if (message.type === '\x47\x45\x54\x5f\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x43\x4f\x4e\x54\x45\x58\x54') {
       const request = await getPendingBiometricRequestById(message.requestId, state);
       if (!request) {
-        sendResponse({ ok: false, error: await tr('background.error.biometric_request_missing') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x5f\x72\x65\x71\x75\x65\x73\x74\x5f\x6d\x69\x73\x73\x69\x6e\x67') });
         return;
       }
 
@@ -1586,17 +1586,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    if (message.type === 'BEGIN_BIOMETRIC_SETUP') {
+    if (message.type === '\x42\x45\x47\x49\x4e\x5f\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x53\x45\x54\x55\x50') {
       try {
         await beginBiometricSetup();
         sendResponse({ ok: true });
       } catch (error) {
-        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+        sendResponse({ ok: false, error: error?.message || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x75\x6e\x65\x78\x70\x65\x63\x74\x65\x64') });
       }
       return;
     }
 
-    if (message.type === 'BEGIN_BIOMETRIC_UNLOCK') {
+    if (message.type === '\x42\x45\x47\x49\x4e\x5f\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x55\x4e\x4c\x4f\x43\x4b') {
       try {
         await beginBiometricUnlock(
           sender,
@@ -1607,32 +1607,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         );
         sendResponse({ ok: true });
       } catch (error) {
-        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+        sendResponse({ ok: false, error: error?.message || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x75\x6e\x65\x78\x70\x65\x63\x74\x65\x64') });
       }
       return;
     }
 
-    if (message.type === 'COMPLETE_BIOMETRIC_SETUP') {
+    if (message.type === '\x43\x4f\x4d\x50\x4c\x45\x54\x45\x5f\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x53\x45\x54\x55\x50') {
       try {
         await completeBiometricSetup(message);
         sendResponse({ ok: true });
       } catch (error) {
-        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+        sendResponse({ ok: false, error: error?.message || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x75\x6e\x65\x78\x70\x65\x63\x74\x65\x64') });
       }
       return;
     }
 
-    if (message.type === 'COMPLETE_BIOMETRIC_UNLOCK') {
+    if (message.type === '\x43\x4f\x4d\x50\x4c\x45\x54\x45\x5f\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x55\x4e\x4c\x4f\x43\x4b') {
       try {
         await completeBiometricUnlock(message);
         sendResponse({ ok: true });
       } catch (error) {
-        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+        sendResponse({ ok: false, error: error?.message || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x75\x6e\x65\x78\x70\x65\x63\x74\x65\x64') });
       }
       return;
     }
 
-    if (message.type === 'CANCEL_BIOMETRIC_REQUEST') {
+    if (message.type === '\x43\x41\x4e\x43\x45\x4c\x5f\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x52\x45\x51\x55\x45\x53\x54') {
       await cancelBiometricRequest(
         String(message.requestId || '').trim(),
         String(message.error || '').trim()
@@ -1641,7 +1641,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    if (message.type === 'REMOVE_BIOMETRIC_CREDENTIAL') {
+    if (message.type === '\x52\x45\x4d\x4f\x56\x45\x5f\x42\x49\x4f\x4d\x45\x54\x52\x49\x43\x5f\x43\x52\x45\x44\x45\x4e\x54\x49\x41\x4c') {
       await setState({
         [KEYS.biometricCredentialId]: '',
         [KEYS.biometricPublicKey]: '',
@@ -1650,41 +1650,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         [KEYS.biometricCreatedAt]: 0,
         [KEYS.pendingBiometricRequest]: null
       });
-      await appendLog({ type: 'security', action: 'biometric-removed' });
+      await appendLog({ type: '\x73\x65\x63\x75\x72\x69\x74\x79', action: '\x62\x69\x6f\x6d\x65\x74\x72\x69\x63\x2d\x72\x65\x6d\x6f\x76\x65\x64' });
       await broadcastLockState();
       sendResponse({ ok: true });
       return;
     }
 
-    if (message.type === 'LOCK_NOW') {
-      await lockNow(message.reason || 'manual');
+    if (message.type === '\x4c\x4f\x43\x4b\x5f\x4e\x4f\x57') {
+      await lockNow(message.reason || '\x6d\x61\x6e\x75\x61\x6c');
       sendResponse({ ok: true });
       return;
     }
 
-    if (message.type === 'SET_UNLOCK_TIMER') {
-      await setUnlockTimer(message.sessionMinutes, message.source || 'popup-session');
+    if (message.type === '\x53\x45\x54\x5f\x55\x4e\x4c\x4f\x43\x4b\x5f\x54\x49\x4d\x45\x52') {
+      await setUnlockTimer(message.sessionMinutes, message.source || '\x70\x6f\x70\x75\x70\x2d\x73\x65\x73\x73\x69\x6f\x6e');
       sendResponse({ ok: true });
       return;
     }
 
-    if (message.type === 'GET_LOGS') {
+    if (message.type === '\x47\x45\x54\x5f\x4c\x4f\x47\x53') {
       sendResponse({ ok: true, logs: Array.isArray(state[KEYS.logs]) ? state[KEYS.logs] : [] });
       return;
     }
 
-    if (message.type === 'CLEAR_LOGS') {
+    if (message.type === '\x43\x4c\x45\x41\x52\x5f\x4c\x4f\x47\x53') {
       await setState({ [KEYS.logs]: [] });
       sendResponse({ ok: true });
       return;
     }
 
-    if (message.type === 'EXPORT_CONFIG') {
+    if (message.type === '\x45\x58\x50\x4f\x52\x54\x5f\x43\x4f\x4e\x46\x49\x47') {
       sendResponse({ ok: true, config: exportConfig(state) });
       return;
     }
 
-    if (message.type === 'IMPORT_CONFIG') {
+    if (message.type === '\x49\x4d\x50\x4f\x52\x54\x5f\x43\x4f\x4e\x46\x49\x47') {
       const updates = normalizeImportedConfig(message.config);
 
       if (KEYS.maxAttempts in updates) {
@@ -1695,13 +1695,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       await setState(updates);
-      await appendLog({ type: 'settings', action: 'config-imported' });
+      await appendLog({ type: '\x73\x65\x74\x74\x69\x6e\x67\x73', action: '\x63\x6f\x6e\x66\x69\x67\x2d\x69\x6d\x70\x6f\x72\x74\x65\x64' });
       await broadcastLockState();
       sendResponse({ ok: true });
       return;
     }
 
-    if (message.type === 'GET_BLUR_REGIONS_FOR_URL') {
+    if (message.type === '\x47\x45\x54\x5f\x42\x4c\x55\x52\x5f\x52\x45\x47\x49\x4f\x4e\x53\x5f\x46\x4f\x52\x5f\x55\x52\x4c') {
       const domainKey = getBlurDomainKey(message.url || sender?.url || '');
       const blurMap = normalizeBlurRegionsByDomain(state[KEYS.blurRegionsByDomain]);
       sendResponse({
@@ -1712,10 +1712,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    if (message.type === 'SAVE_BLUR_REGIONS_FOR_URL') {
+    if (message.type === '\x53\x41\x56\x45\x5f\x42\x4c\x55\x52\x5f\x52\x45\x47\x49\x4f\x4e\x53\x5f\x46\x4f\x52\x5f\x55\x52\x4c') {
       const domainKey = getBlurDomainKey(message.url || sender?.url || '');
       if (!domainKey) {
-        sendResponse({ ok: false, error: await tr('background.error.current_domain_unknown') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x63\x75\x72\x72\x65\x6e\x74\x5f\x64\x6f\x6d\x61\x69\x6e\x5f\x75\x6e\x6b\x6e\x6f\x77\x6e') });
         return;
       }
 
@@ -1733,10 +1733,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    if (message.type === 'REPORT_TAMPER') {
+    if (message.type === '\x52\x45\x50\x4f\x52\x54\x5f\x54\x41\x4d\x50\x45\x52') {
       await appendLog({
-        type: 'tamper',
-        action: String(message.action || 'unknown'),
+        type: '\x74\x61\x6d\x70\x65\x72',
+        action: String(message.action || '\x75\x6e\x6b\x6e\x6f\x77\x6e'),
         url: safeUrlForLog(message.url || sender?.url || ''),
         meta: isPlainObject(message.meta) ? message.meta : {}
       });
@@ -1744,7 +1744,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    if (message.type === 'SAVE_SETTINGS') {
+    if (message.type === '\x53\x41\x56\x45\x5f\x53\x45\x54\x54\x49\x4e\x47\x53') {
       const updates = {
         [KEYS.whitelist]: normalizeWhitelist(message.whitelist),
         [KEYS.autoLockMinutes]: clampInteger(message.autoLockMinutes, 1, 1440, DEFAULTS.autoLockMinutes),
@@ -1768,30 +1768,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       );
 
       await setState(updates);
-      await appendLog({ type: 'settings', action: 'save-settings' });
+      await appendLog({ type: '\x73\x65\x74\x74\x69\x6e\x67\x73', action: '\x73\x61\x76\x65\x2d\x73\x65\x74\x74\x69\x6e\x67\x73' });
       await broadcastLockState();
       sendResponse({ ok: true });
       return;
     }
 
-    if (message.type === 'SET_DEFAULT_REGION_MODE') {
+    if (message.type === '\x53\x45\x54\x5f\x44\x45\x46\x41\x55\x4c\x54\x5f\x52\x45\x47\x49\x4f\x4e\x5f\x4d\x4f\x44\x45') {
       const nextMode = normalizeRegionMode(message.mode, settings.defaultRegionMode);
       await setState({ [KEYS.defaultRegionMode]: nextMode });
-      await appendLog({ type: 'privacy', action: 'default-region-mode', meta: { mode: nextMode } });
+      await appendLog({ type: '\x70\x72\x69\x76\x61\x63\x79', action: '\x64\x65\x66\x61\x75\x6c\x74\x2d\x72\x65\x67\x69\x6f\x6e\x2d\x6d\x6f\x64\x65', meta: { mode: nextMode } });
       await broadcastLockState();
       sendResponse({ ok: true, mode: nextMode });
       return;
     }
 
-    if (message.type === 'SET_INITIAL_PASSWORD') {
+    if (message.type === '\x53\x45\x54\x5f\x49\x4e\x49\x54\x49\x41\x4c\x5f\x50\x41\x53\x53\x57\x4f\x52\x44') {
       if (!settings.requiresPasswordSetup) {
-        sendResponse({ ok: false, error: await tr('background.error.password_already_setup') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x70\x61\x73\x73\x77\x6f\x72\x64\x5f\x61\x6c\x72\x65\x61\x64\x79\x5f\x73\x65\x74\x75\x70') });
         return;
       }
 
       const newPassword = String(message.newPassword || '');
       if (newPassword.length < 6) {
-        sendResponse({ ok: false, error: await tr('background.error.password_too_short') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x70\x61\x73\x73\x77\x6f\x72\x64\x5f\x74\x6f\x6f\x5f\x73\x68\x6f\x72\x74') });
         return;
       }
 
@@ -1807,7 +1807,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         [KEYS.failedAttempts]: 0,
         [KEYS.lockoutUntil]: 0
       });
-      await appendLog({ type: 'security', action: 'password-initialized' });
+      await appendLog({ type: '\x73\x65\x63\x75\x72\x69\x74\x79', action: '\x70\x61\x73\x73\x77\x6f\x72\x64\x2d\x69\x6e\x69\x74\x69\x61\x6c\x69\x7a\x65\x64' });
 
       const requestedSessionMinutes = resolveUnlockSessionMinutes(
         settings,
@@ -1818,7 +1818,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       await unlockNow(
         state,
-        'initial-setup',
+        '\x69\x6e\x69\x74\x69\x61\x6c\x2d\x73\x65\x74\x75\x70',
         message.url || sender?.url || '',
         requestedSessionMinutes,
         settings.requirePasswordOnDomainChange
@@ -1827,9 +1827,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    if (message.type === 'VERIFY_PASSWORD_ONLY') {
+    if (message.type === '\x56\x45\x52\x49\x46\x59\x5f\x50\x41\x53\x53\x57\x4f\x52\x44\x5f\x4f\x4e\x4c\x59') {
       if (settings.requiresPasswordSetup) {
-        sendResponse({ ok: false, error: await tr('background.error.first_setup_before_unlock') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x66\x69\x72\x73\x74\x5f\x73\x65\x74\x75\x70\x5f\x62\x65\x66\x6f\x72\x65\x5f\x75\x6e\x6c\x6f\x63\x6b') });
         return;
       }
 
@@ -1864,9 +1864,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    if (message.type === 'CHANGE_PASSWORD') {
+    if (message.type === '\x43\x48\x41\x4e\x47\x45\x5f\x50\x41\x53\x53\x57\x4f\x52\x44') {
       if (settings.requiresPasswordSetup) {
-        sendResponse({ ok: false, error: await tr('background.error.first_setup_required') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x66\x69\x72\x73\x74\x5f\x73\x65\x74\x75\x70\x5f\x72\x65\x71\x75\x69\x72\x65\x64') });
         return;
       }
 
@@ -1877,7 +1877,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       );
 
       if (currentHash !== state[KEYS.passwordHash]) {
-        sendResponse({ ok: false, error: await tr('background.error.old_password_wrong') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x6f\x6c\x64\x5f\x70\x61\x73\x73\x77\x6f\x72\x64\x5f\x77\x72\x6f\x6e\x67') });
         return;
       }
 
@@ -1893,14 +1893,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         [KEYS.lockoutUntil]: 0,
         [KEYS.requiresPasswordSetup]: false
       });
-      await appendLog({ type: 'security', action: 'password-changed' });
+      await appendLog({ type: '\x73\x65\x63\x75\x72\x69\x74\x79', action: '\x70\x61\x73\x73\x77\x6f\x72\x64\x2d\x63\x68\x61\x6e\x67\x65\x64' });
       sendResponse({ ok: true });
       return;
     }
 
-    if (message.type === 'UNLOCK_WITH_PASSWORD') {
+    if (message.type === '\x55\x4e\x4c\x4f\x43\x4b\x5f\x57\x49\x54\x48\x5f\x50\x41\x53\x53\x57\x4f\x52\x44') {
       if (settings.requiresPasswordSetup) {
-        sendResponse({ ok: false, error: await tr('background.error.first_setup_before_unlock') });
+        sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x66\x69\x72\x73\x74\x5f\x73\x65\x74\x75\x70\x5f\x62\x65\x66\x6f\x72\x65\x5f\x75\x6e\x6c\x6f\x63\x6b') });
         return;
       }
 
@@ -1908,7 +1908,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({
           ok: true,
           success: false,
-          error: await tr('background.error.temp_locked'),
+          error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x74\x65\x6d\x70\x5f\x6c\x6f\x63\x6b\x65\x64'),
           remainingMs
         });
         return;
@@ -1930,7 +1930,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         await unlockNow(
           state,
-          'password',
+          '\x70\x61\x73\x73\x77\x6f\x72\x64',
           message.url || sender?.url || '',
           requestedSessionMinutes,
           settings.requirePasswordOnDomainChange
@@ -1948,19 +1948,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         state,
         settings,
         message.url || sender?.url || '',
-        { source: 'global-unlock' }
+        { source: '\x67\x6c\x6f\x62\x61\x6c\x2d\x75\x6e\x6c\x6f\x63\x6b' }
       ));
       return;
     }
 
-    sendResponse({ ok: false, error: await tr('background.error.unknown_message') });
+    sendResponse({ ok: false, error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x75\x6e\x6b\x6e\x6f\x77\x6e\x5f\x6d\x65\x73\x73\x61\x67\x65') });
   })().catch(async (error) => {
     const message = error?.message || '';
-    const normalized = message === 'TRANSLATE_INVALID_CONFIG'
-      ? await tr('background.error.invalid_config_file')
-      : message === 'TRANSLATE_NO_IMPORT_FIELDS'
-          ? await tr('background.error.no_import_fields')
-          : (message || await tr('background.error.unexpected'));
+    const normalized = message === '\x54\x52\x41\x4e\x53\x4c\x41\x54\x45\x5f\x49\x4e\x56\x41\x4c\x49\x44\x5f\x43\x4f\x4e\x46\x49\x47'
+      ? await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x69\x6e\x76\x61\x6c\x69\x64\x5f\x63\x6f\x6e\x66\x69\x67\x5f\x66\x69\x6c\x65')
+      : message === '\x54\x52\x41\x4e\x53\x4c\x41\x54\x45\x5f\x4e\x4f\x5f\x49\x4d\x50\x4f\x52\x54\x5f\x46\x49\x45\x4c\x44\x53'
+          ? await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x6e\x6f\x5f\x69\x6d\x70\x6f\x72\x74\x5f\x66\x69\x65\x6c\x64\x73')
+          : (message || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x75\x6e\x65\x78\x70\x65\x63\x74\x65\x64'));
     sendResponse({ ok: false, error: normalized });
   });
 

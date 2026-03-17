@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Lock Pro X",
+  "version": "2.1.0",
+  "description": "Lock regular web pages with a password overlay, session timers, privacy regions, tamper logs, and advanced whitelist rules.",
+  "permissions": ["storage", "tabs", "alarms", "idle", "windows"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Chrome Lock Pro X",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "commands": {
+    "panic-lock": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Lock browser immediately"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["i18n.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
