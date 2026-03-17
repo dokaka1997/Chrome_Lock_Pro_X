@@ -1234,6 +1234,18 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
   await lockNow('window-blur');
 });
 
+chrome.windows.onBoundsChanged.addListener(async (window) => {
+  if (!window || window.state !== 'minimized') return;
+  if (window.type && window.type !== 'normal') return;
+
+  await ensureInitialized();
+  const state = await getState();
+  if (!readStateBoolean(state, KEYS.lockOnWindowBlur, DEFAULTS.lockOnWindowBlur)) return;
+  if (state[KEYS.isLocked]) return;
+
+  await lockNow('window-minimized', { windowId: window.id || null });
+});
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === ALARMS.autoLock) {
     await lockNow('idle-timeout');
