@@ -3,6 +3,8 @@ let heartbeatTimer = null;
 let overlayFocusTimer = null;
 let unlocking = false;
 let biometricPending = false;
+let stateInitialized = false;
+let uiSyncScheduled = false;
 let lastTamperReportAt = 0;
 let lastTamperAction = '';
 const i18n = globalThis.CLPX_I18N;
@@ -222,11 +224,28 @@ function isProfilePolicyLocked(profile = getActiveProfile()) {
 
 function shouldLockCurrentPage() {
   if (!isLockablePage()) return false;
+  if (!stateInitialized) return false;
   if (currentState.requiresPasswordSetup) return false;
 
   const activeProfile = getActiveProfile();
   const globalLocked = isGlobalLockActiveForCurrentPage(activeProfile);
   return globalLocked || isProfilePolicyLocked(activeProfile);
+}
+
+function scheduleUiSync() {
+  if (uiSyncScheduled) return;
+
+  uiSyncScheduled = true;
+  window.requestAnimationFrame(() => {
+    uiSyncScheduled = false;
+    if (!stateInitialized) return;
+
+    if (shouldLockCurrentPage()) {
+      enforceOverlayIntegrity();
+    }
+    ensureBlurArtifacts();
+    syncPageIdentityMask();
+  });
 }
 
 function clamp(value, min, max) {
@@ -1510,12 +1529,13 @@ async function init() {
         sessionAccessHosts: normalizeSessionAccessHosts(state.sessionAccessHosts),
         biometricConfigured: !!state.biometricConfigured
       };
+      stateInitialized = true;
     }
 
     lastObservedUrl = location.href;
     syncUI();
   } catch {
-    // ignore initialization failures
+    stateInitialized = false;
   }
 }
 
@@ -1542,6 +1562,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sessionAccessHosts: normalizeSessionAccessHosts(message.sessionAccessHosts),
       biometricConfigured: !!message.biometricConfigured
     };
+    stateInitialized = true;
     const nextProfileId = getActiveProfile()?.id || '';
 
     if ((!wasLocked && currentState.isLocked) || currentState.requiresPasswordSetup || previousProfileId !== nextProfileId) {
@@ -1596,11 +1617,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 const observer = new MutationObserver(() => {
-  if (shouldLockCurrentPage()) {
-    enforceOverlayIntegrity();
-  }
-  ensureBlurArtifacts();
-  syncPageIdentityMask();
+  scheduleUiSync();
 });
 
 observer.observe(document, { childList: true, subtree: true });
