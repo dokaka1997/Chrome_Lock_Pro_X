@@ -76,6 +76,11 @@
         <input id="lockOnWindowBlur" type="checkbox" />
         <span id="lockOnWindowBlurLabel">Lock immediately when Chrome loses focus or when a browser window is minimized</span>
       </label>
+      <label class="toggle">
+        <input id="clearHistoryOnLockout" type="checkbox" />
+        <span id="clearHistoryOnLockoutLabel">Clear Chrome browsing history when lockout is triggered by too many failed attempts</span>
+      </label>
+      <small id="clearHistoryOnLockoutHint">When enabled, the extension will request one-time permission to clear browsing history after the failed-attempt limit is reached.</small>
       <label>
         <span id="unlockScopeLabel">Unlock scope</span>
         <select id="unlockScope">

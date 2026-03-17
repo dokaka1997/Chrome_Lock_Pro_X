@@ -19,6 +19,7 @@ const KEYS = {
   unlockSessionMinutes: '\x75\x6e\x6c\x6f\x63\x6b\x53\x65\x73\x73\x69\x6f\x6e\x4d\x69\x6e\x75\x74\x65\x73',
   unlockUntil: '\x75\x6e\x6c\x6f\x63\x6b\x55\x6e\x74\x69\x6c',
   lockOnWindowBlur: '\x6c\x6f\x63\x6b\x4f\x6e\x57\x69\x6e\x64\x6f\x77\x42\x6c\x75\x72',
+  clearHistoryOnLockout: '\x63\x6c\x65\x61\x72\x48\x69\x73\x74\x6f\x72\x79\x4f\x6e\x4c\x6f\x63\x6b\x6f\x75\x74',
   blurRegionsByDomain: '\x62\x6c\x75\x72\x52\x65\x67\x69\x6f\x6e\x73\x42\x79\x44\x6f\x6d\x61\x69\x6e',
   defaultRegionMode: '\x64\x65\x66\x61\x75\x6c\x74\x52\x65\x67\x69\x6f\x6e\x4d\x6f\x64\x65',
   maskPageIdentity: '\x6d\x61\x73\x6b\x50\x61\x67\x65\x49\x64\x65\x6e\x74\x69\x74\x79',
@@ -43,6 +44,7 @@ const DEFAULTS = {
   unlockSessionMinutes: 0,
   unlockUntil: 0,
   lockOnWindowBlur: false,
+  clearHistoryOnLockout: false,
   requiresPasswordSetup: true,
   blurRegionsByDomain: {},
   defaultRegionMode: '\x62\x6c\x75\x72',
@@ -57,7 +59,7 @@ const DEFAULTS = {
   biometricCreatedAt: 0,
   pendingBiometricRequest: null,
   logs: [],
-  settingsVersion: 8,
+  settingsVersion: 9,
   whitelist: [
     '\x64\x6f\x6d\x61\x69\x6e\x3a\x6d\x61\x69\x6c\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d',
     '\x64\x6f\x6d\x61\x69\x6e\x3a\x63\x61\x6c\x65\x6e\x64\x61\x72\x2e\x67\x6f\x6f\x67\x6c\x65\x2e\x63\x6f\x6d',
@@ -445,6 +447,11 @@ function getSettingsSnapshot(state) {
     lockoutMinutes: clampInteger(state[KEYS.lockoutMinutes], 1, 1440, DEFAULTS.lockoutMinutes),
     unlockSessionMinutes: clampInteger(state[KEYS.unlockSessionMinutes], 0, 1440, DEFAULTS.unlockSessionMinutes),
     lockOnWindowBlur: readStateBoolean(state, KEYS.lockOnWindowBlur, DEFAULTS.lockOnWindowBlur),
+    clearHistoryOnLockout: readStateBoolean(
+      state,
+      KEYS.clearHistoryOnLockout,
+      DEFAULTS.clearHistoryOnLockout
+    ),
     requiresPasswordSetup: readStateBoolean(state, KEYS.requiresPasswordSetup, DEFAULTS.requiresPasswordSetup),
     defaultRegionMode: normalizeRegionMode(state[KEYS.defaultRegionMode], DEFAULTS.defaultRegionMode),
     maskPageIdentity: readStateBoolean(state, KEYS.maskPageIdentity, DEFAULTS.maskPageIdentity),
@@ -1022,6 +1029,9 @@ async function ensureInitialized() {
   if (!Number.isFinite(Number(state[KEYS.unlockUntil]))) updates[KEYS.unlockUntil] = DEFAULTS.unlockUntil;
   if (!Number.isFinite(Number(state[KEYS.passwordIterations]))) updates[KEYS.passwordIterations] = DEFAULTS.passwordIterations;
   if (typeof state[KEYS.lockOnWindowBlur] !== '\x62\x6f\x6f\x6c\x65\x61\x6e') updates[KEYS.lockOnWindowBlur] = DEFAULTS.lockOnWindowBlur;
+  if (typeof state[KEYS.clearHistoryOnLockout] !== '\x62\x6f\x6f\x6c\x65\x61\x6e') {
+    updates[KEYS.clearHistoryOnLockout] = DEFAULTS.clearHistoryOnLockout;
+  }
   if (!REGION_MODES.includes(String(state[KEYS.defaultRegionMode] || '').trim().toLowerCase())) {
     updates[KEYS.defaultRegionMode] = DEFAULTS.defaultRegionMode;
   }
@@ -1112,6 +1122,44 @@ function safeUrlForLog(url) {
     return parsed.origin + parsed.pathname;
   } catch {
     return url || '';
+  }
+}
+
+async function maybeClearBrowsingHistoryOnLockout(settings, url = '') {
+  if (!settings?.clearHistoryOnLockout) {
+    return;
+  }
+
+  const logUrl = safeUrlForLog(url);
+
+  try {
+    const canClearHistory = !!chrome.permissions?.contains
+      && !!chrome.browsingData?.remove
+      && await chrome.permissions.contains({ permissions: ['\x62\x72\x6f\x77\x73\x69\x6e\x67\x44\x61\x74\x61'] });
+
+    if (!canClearHistory) {
+      await appendLog({
+        type: '\x73\x65\x63\x75\x72\x69\x74\x79',
+        action: '\x68\x69\x73\x74\x6f\x72\x79\x2d\x63\x6c\x65\x61\x72\x2d\x73\x6b\x69\x70\x70\x65\x64',
+        url: logUrl,
+        meta: { reason: '\x70\x65\x72\x6d\x69\x73\x73\x69\x6f\x6e\x2d\x6d\x69\x73\x73\x69\x6e\x67' }
+      });
+      return;
+    }
+
+    await chrome.browsingData.remove({ since: 0 }, { history: true });
+    await appendLog({
+      type: '\x73\x65\x63\x75\x72\x69\x74\x79',
+      action: '\x68\x69\x73\x74\x6f\x72\x79\x2d\x63\x6c\x65\x61\x72\x65\x64\x2d\x6f\x6e\x2d\x6c\x6f\x63\x6b\x6f\x75\x74',
+      url: logUrl
+    });
+  } catch (error) {
+    await appendLog({
+      type: '\x73\x65\x63\x75\x72\x69\x74\x79',
+      action: '\x68\x69\x73\x74\x6f\x72\x79\x2d\x63\x6c\x65\x61\x72\x2d\x66\x61\x69\x6c\x65\x64',
+      url: logUrl,
+      meta: { error: error?.message || '\x75\x6e\x6b\x6e\x6f\x77\x6e' }
+    });
   }
 }
 
@@ -1242,6 +1290,7 @@ async function handleFailedPasswordAttempt(state, settings, url = '', meta = {})
       action: '\x6c\x6f\x63\x6b\x6f\x75\x74\x2d\x61\x63\x74\x69\x76\x61\x74\x65\x64',
       meta
     });
+    await maybeClearBrowsingHistoryOnLockout(settings, url);
   }
 
   await broadcastLockState();
@@ -1334,6 +1383,7 @@ function buildStateResponse(state) {
     unlockUntil,
     unlockRemainingMs: Math.max(0, unlockUntil - now()),
     lockOnWindowBlur: settings.lockOnWindowBlur,
+    clearHistoryOnLockout: settings.clearHistoryOnLockout,
     requiresPasswordSetup: settings.requiresPasswordSetup,
     defaultRegionMode: settings.defaultRegionMode,
     maskPageIdentity: settings.maskPageIdentity,
@@ -1416,6 +1466,12 @@ function normalizeImportedConfig(config) {
     touched = true;
   }
 
+  const clearHistoryOnLockout = pickConfigValue(config, '\x63\x6c\x65\x61\x72\x48\x69\x73\x74\x6f\x72\x79\x4f\x6e\x4c\x6f\x63\x6b\x6f\x75\x74');
+  if (clearHistoryOnLockout !== undefined) {
+    updates[KEYS.clearHistoryOnLockout] = !!clearHistoryOnLockout;
+    touched = true;
+  }
+
   const defaultRegionMode = pickConfigValue(config, '\x64\x65\x66\x61\x75\x6c\x74\x52\x65\x67\x69\x6f\x6e\x4d\x6f\x64\x65');
   if (defaultRegionMode !== undefined) {
     updates[KEYS.defaultRegionMode] = normalizeRegionMode(defaultRegionMode, DEFAULTS.defaultRegionMode);
@@ -1461,6 +1517,7 @@ function exportConfig(state) {
     unlockSessionMinutes: settings.unlockSessionMinutes,
     requirePasswordOnDomainChange: settings.requirePasswordOnDomainChange,
     lockOnWindowBlur: settings.lockOnWindowBlur,
+    clearHistoryOnLockout: settings.clearHistoryOnLockout,
     defaultRegionMode: settings.defaultRegionMode,
     maskPageIdentity: settings.maskPageIdentity,
     domainProfiles: settings.domainProfiles
@@ -1753,6 +1810,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         [KEYS.unlockSessionMinutes]: clampInteger(message.unlockSessionMinutes, 0, 1440, DEFAULTS.unlockSessionMinutes),
         [KEYS.requirePasswordOnDomainChange]: !!message.requirePasswordOnDomainChange,
         [KEYS.lockOnWindowBlur]: !!message.lockOnWindowBlur,
+        [KEYS.clearHistoryOnLockout]: !!message.clearHistoryOnLockout,
         [KEYS.defaultRegionMode]: normalizeRegionMode(message.defaultRegionMode, DEFAULTS.defaultRegionMode),
         [KEYS.maskPageIdentity]: !!message.maskPageIdentity,
         [KEYS.domainProfiles]: normalizeDomainProfiles(message.domainProfiles)

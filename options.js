@@ -16,6 +16,7 @@ const unlockSessionMinutes = document.getElementById('unlockSessionMinutes');
 const maxAttempts = document.getElementById('maxAttempts');
 const lockoutMinutes = document.getElementById('lockoutMinutes');
 const lockOnWindowBlur = document.getElementById('lockOnWindowBlur');
+const clearHistoryOnLockout = document.getElementById('clearHistoryOnLockout');
 const unlockScope = document.getElementById('unlockScope');
 const defaultRegionMode = document.getElementById('defaultRegionMode');
 const maskPageIdentity = document.getElementById('maskPageIdentity');
@@ -40,6 +41,40 @@ function t(key, values) {
 function setMessage(target, text, isError = false) {
   target.textContent = text;
   target.classList.toggle('error', isError);
+}
+
+async function hasOptionalPermission(permission) {
+  if (!chrome.permissions?.contains) return false;
+
+  try {
+    return await chrome.permissions.contains({ permissions: [permission] });
+  } catch {
+    return false;
+  }
+}
+
+async function ensureBrowsingDataPermission() {
+  if (!clearHistoryOnLockout.checked) return true;
+  if (!chrome.permissions?.request) return false;
+  if (await hasOptionalPermission('browsingData')) return true;
+
+  try {
+    return await chrome.permissions.request({ permissions: ['browsingData'] });
+  } catch {
+    return false;
+  }
+}
+
+async function maybeReleaseBrowsingDataPermission() {
+  if (clearHistoryOnLockout.checked) return;
+  if (!chrome.permissions?.remove) return;
+  if (!await hasOptionalPermission('browsingData')) return;
+
+  try {
+    await chrome.permissions.remove({ permissions: ['browsingData'] });
+  } catch {
+    // Ignore permission removal failures and keep the saved setting as source of truth.
+  }
 }
 
 function normalizeRules(text) {
@@ -451,6 +486,8 @@ function applyStaticTranslations() {
   document.getElementById('maxAttemptsLabel').textContent = t('options.policy.max_attempts_label');
   document.getElementById('lockoutMinutesLabel').textContent = t('options.policy.lockout_minutes_label');
   document.getElementById('lockOnWindowBlurLabel').textContent = t('options.policy.blur_lock_toggle');
+  document.getElementById('clearHistoryOnLockoutLabel').textContent = t('options.policy.clear_history_on_lockout_toggle');
+  document.getElementById('clearHistoryOnLockoutHint').textContent = t('options.policy.clear_history_on_lockout_hint');
   document.getElementById('unlockScopeLabel').textContent = t('options.policy.unlock_scope_label');
   document.getElementById('unlockScopeHint').textContent = t('options.policy.unlock_scope_hint');
   unlockScope.options[0].textContent = t('options.policy.unlock_scope.domain');
@@ -541,6 +578,7 @@ async function loadState() {
     maxAttempts.value = state.maxAttempts || 5;
     lockoutMinutes.value = state.lockoutMinutes || 10;
     lockOnWindowBlur.checked = !!state.lockOnWindowBlur;
+    clearHistoryOnLockout.checked = !!state.clearHistoryOnLockout;
     unlockScope.value = typeof state.requirePasswordOnDomainChange === 'boolean' && !state.requirePasswordOnDomainChange
       ? 'global'
       : 'domain';
@@ -651,6 +689,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     maxAttempts: Math.max(1, Number(maxAttempts.value || 5)),
     lockoutMinutes: Math.max(1, Number(lockoutMinutes.value || 10)),
     lockOnWindowBlur: lockOnWindowBlur.checked,
+    clearHistoryOnLockout: clearHistoryOnLockout.checked,
     requirePasswordOnDomainChange: unlockScope.value !== 'global',
     defaultRegionMode: defaultRegionMode.value,
     maskPageIdentity: maskPageIdentity.checked,
@@ -658,11 +697,21 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     whitelist: rules
   };
 
+  if (payload.clearHistoryOnLockout) {
+    const granted = await ensureBrowsingDataPermission();
+    if (!granted) {
+      setMessage(settingsMsg, t('options.messages.history_permission_denied'), true);
+      return;
+    }
+  }
+
   const response = await chrome.runtime.sendMessage(payload);
   if (!response?.ok) {
     setMessage(settingsMsg, response?.error || t('options.messages.save_failed'), true);
     return;
   }
+
+  await maybeReleaseBrowsingDataPermission();
 
   setMessage(settingsMsg, t('options.messages.settings_saved', {
     session: formatSessionLabel(payload.unlockSessionMinutes),

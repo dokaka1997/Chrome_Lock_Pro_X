@@ -19,6 +19,7 @@ const KEYS = {
   unlockSessionMinutes: 'unlockSessionMinutes',
   unlockUntil: 'unlockUntil',
   lockOnWindowBlur: 'lockOnWindowBlur',
+  clearHistoryOnLockout: 'clearHistoryOnLockout',
   blurRegionsByDomain: 'blurRegionsByDomain',
   defaultRegionMode: 'defaultRegionMode',
   maskPageIdentity: 'maskPageIdentity',
@@ -43,6 +44,7 @@ const DEFAULTS = {
   unlockSessionMinutes: 0,
   unlockUntil: 0,
   lockOnWindowBlur: false,
+  clearHistoryOnLockout: false,
   requiresPasswordSetup: true,
   blurRegionsByDomain: {},
   defaultRegionMode: 'blur',
@@ -57,7 +59,7 @@ const DEFAULTS = {
   biometricCreatedAt: 0,
   pendingBiometricRequest: null,
   logs: [],
-  settingsVersion: 8,
+  settingsVersion: 9,
   whitelist: [
     'domain:mail.google.com',
     'domain:calendar.google.com',
@@ -445,6 +447,11 @@ function getSettingsSnapshot(state) {
     lockoutMinutes: clampInteger(state[KEYS.lockoutMinutes], 1, 1440, DEFAULTS.lockoutMinutes),
     unlockSessionMinutes: clampInteger(state[KEYS.unlockSessionMinutes], 0, 1440, DEFAULTS.unlockSessionMinutes),
     lockOnWindowBlur: readStateBoolean(state, KEYS.lockOnWindowBlur, DEFAULTS.lockOnWindowBlur),
+    clearHistoryOnLockout: readStateBoolean(
+      state,
+      KEYS.clearHistoryOnLockout,
+      DEFAULTS.clearHistoryOnLockout
+    ),
     requiresPasswordSetup: readStateBoolean(state, KEYS.requiresPasswordSetup, DEFAULTS.requiresPasswordSetup),
     defaultRegionMode: normalizeRegionMode(state[KEYS.defaultRegionMode], DEFAULTS.defaultRegionMode),
     maskPageIdentity: readStateBoolean(state, KEYS.maskPageIdentity, DEFAULTS.maskPageIdentity),
@@ -1022,6 +1029,9 @@ async function ensureInitialized() {
   if (!Number.isFinite(Number(state[KEYS.unlockUntil]))) updates[KEYS.unlockUntil] = DEFAULTS.unlockUntil;
   if (!Number.isFinite(Number(state[KEYS.passwordIterations]))) updates[KEYS.passwordIterations] = DEFAULTS.passwordIterations;
   if (typeof state[KEYS.lockOnWindowBlur] !== 'boolean') updates[KEYS.lockOnWindowBlur] = DEFAULTS.lockOnWindowBlur;
+  if (typeof state[KEYS.clearHistoryOnLockout] !== 'boolean') {
+    updates[KEYS.clearHistoryOnLockout] = DEFAULTS.clearHistoryOnLockout;
+  }
   if (!REGION_MODES.includes(String(state[KEYS.defaultRegionMode] || '').trim().toLowerCase())) {
     updates[KEYS.defaultRegionMode] = DEFAULTS.defaultRegionMode;
   }
@@ -1112,6 +1122,44 @@ function safeUrlForLog(url) {
     return parsed.origin + parsed.pathname;
   } catch {
     return url || '';
+  }
+}
+
+async function maybeClearBrowsingHistoryOnLockout(settings, url = '') {
+  if (!settings?.clearHistoryOnLockout) {
+    return;
+  }
+
+  const logUrl = safeUrlForLog(url);
+
+  try {
+    const canClearHistory = !!chrome.permissions?.contains
+      && !!chrome.browsingData?.remove
+      && await chrome.permissions.contains({ permissions: ['browsingData'] });
+
+    if (!canClearHistory) {
+      await appendLog({
+        type: 'security',
+        action: 'history-clear-skipped',
+        url: logUrl,
+        meta: { reason: 'permission-missing' }
+      });
+      return;
+    }
+
+    await chrome.browsingData.remove({ since: 0 }, { history: true });
+    await appendLog({
+      type: 'security',
+      action: 'history-cleared-on-lockout',
+      url: logUrl
+    });
+  } catch (error) {
+    await appendLog({
+      type: 'security',
+      action: 'history-clear-failed',
+      url: logUrl,
+      meta: { error: error?.message || 'unknown' }
+    });
   }
 }
 
@@ -1242,6 +1290,7 @@ async function handleFailedPasswordAttempt(state, settings, url = '', meta = {})
       action: 'lockout-activated',
       meta
     });
+    await maybeClearBrowsingHistoryOnLockout(settings, url);
   }
 
   await broadcastLockState();
@@ -1334,6 +1383,7 @@ function buildStateResponse(state) {
     unlockUntil,
     unlockRemainingMs: Math.max(0, unlockUntil - now()),
     lockOnWindowBlur: settings.lockOnWindowBlur,
+    clearHistoryOnLockout: settings.clearHistoryOnLockout,
     requiresPasswordSetup: settings.requiresPasswordSetup,
     defaultRegionMode: settings.defaultRegionMode,
     maskPageIdentity: settings.maskPageIdentity,
@@ -1416,6 +1466,12 @@ function normalizeImportedConfig(config) {
     touched = true;
   }
 
+  const clearHistoryOnLockout = pickConfigValue(config, 'clearHistoryOnLockout');
+  if (clearHistoryOnLockout !== undefined) {
+    updates[KEYS.clearHistoryOnLockout] = !!clearHistoryOnLockout;
+    touched = true;
+  }
+
   const defaultRegionMode = pickConfigValue(config, 'defaultRegionMode');
   if (defaultRegionMode !== undefined) {
     updates[KEYS.defaultRegionMode] = normalizeRegionMode(defaultRegionMode, DEFAULTS.defaultRegionMode);
@@ -1461,6 +1517,7 @@ function exportConfig(state) {
     unlockSessionMinutes: settings.unlockSessionMinutes,
     requirePasswordOnDomainChange: settings.requirePasswordOnDomainChange,
     lockOnWindowBlur: settings.lockOnWindowBlur,
+    clearHistoryOnLockout: settings.clearHistoryOnLockout,
     defaultRegionMode: settings.defaultRegionMode,
     maskPageIdentity: settings.maskPageIdentity,
     domainProfiles: settings.domainProfiles
@@ -1753,6 +1810,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         [KEYS.unlockSessionMinutes]: clampInteger(message.unlockSessionMinutes, 0, 1440, DEFAULTS.unlockSessionMinutes),
         [KEYS.requirePasswordOnDomainChange]: !!message.requirePasswordOnDomainChange,
         [KEYS.lockOnWindowBlur]: !!message.lockOnWindowBlur,
+        [KEYS.clearHistoryOnLockout]: !!message.clearHistoryOnLockout,
         [KEYS.defaultRegionMode]: normalizeRegionMode(message.defaultRegionMode, DEFAULTS.defaultRegionMode),
         [KEYS.maskPageIdentity]: !!message.maskPageIdentity,
         [KEYS.domainProfiles]: normalizeDomainProfiles(message.domainProfiles)
