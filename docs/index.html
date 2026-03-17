@@ -167,9 +167,10 @@
       <h1>Privacy Policy</h1>
       <p>
         Chrome Lock Pro X is designed to protect regular web pages inside Chrome using local-only lock,
-        timer, and privacy-region features. This policy explains what data the extension stores and how it is used.
+        timer, privacy-region, and optional biometric unlock features. This policy explains what data the
+        extension stores and how it is used.
       </p>
-      <div class="meta">Last updated: March 16, 2026</div>
+      <div class="meta">Last updated: March 17, 2026</div>
     </section>
 
     <div class="grid">
@@ -177,7 +178,8 @@
         <h2>Summary</h2>
         <p>
           Chrome Lock Pro X stores its data locally in your browser profile. The extension does not send your
-          settings, password material, logs, whitelist rules, or privacy-region data to any remote server.
+          settings, password material, biometric unlock metadata, logs, whitelist rules, or privacy-region
+          data to any remote server.
         </p>
         <p>
           All executable logic is bundled inside the extension package. The extension does not download or execute
@@ -191,6 +193,10 @@
           Chrome Lock Pro X does not sell, transmit, or share your data with third parties. All processing is
           performed locally by the extension unless you explicitly export logs or settings yourself.
         </p>
+        <p class="note">
+          The extension does not use a remote backend for password checks, biometric verification, lock decisions,
+          or privacy-region storage.
+        </p>
       </section>
     </div>
 
@@ -198,13 +204,26 @@
       <h2>Data Stored Locally</h2>
       <ul>
         <li>A derived password hash, salt, and PBKDF2 iteration count.</li>
+        <li>
+          Optional biometric unlock metadata used for WebAuthn platform authenticators, including a credential ID,
+          public key, algorithm, transports, and registration timestamp.
+        </li>
         <li>Lock state and unlock-session timers.</li>
+        <li>
+          Session access state used to remember whether the current unlock session applies only to the current
+          domain or to all domains.
+        </li>
         <li>Failed-attempt counters and lockout information.</li>
         <li>Whitelist rules and per-domain profiles.</li>
         <li>Privacy-region data saved by domain.</li>
         <li>Security and tamper logs.</li>
         <li>UI language preference.</li>
       </ul>
+      <p class="note">
+        Chrome Lock Pro X does not receive raw fingerprint, face, or PIN data. When biometric unlock is enabled,
+        Chrome and the operating system perform the verification and only return a WebAuthn success or failure
+        result plus the credential material needed for future verification.
+      </p>
     </section>
 
     <section class="section">
@@ -213,6 +232,7 @@
       <ul>
         <li>show the lock overlay,</li>
         <li>evaluate whitelist and profile rules against the current page URL,</li>
+        <li>decide whether the current site is allowed by the active unlock-session scope,</li>
         <li>restore privacy regions for the current domain,</li>
         <li>mask page identity when that feature is enabled,</li>
         <li>record local security events.</li>
@@ -227,12 +247,13 @@
       <h2>User Controls</h2>
       <ul>
         <li>Change or remove lock settings.</li>
+        <li>Register or remove biometric unlock.</li>
         <li>Clear security logs.</li>
         <li>Export logs.</li>
         <li>Export and import settings backups.</li>
         <li>Remove the extension at any time unless your browser is managed by an administrator.</li>
       </ul>
-      <p class="note">Settings backup exports do not include password material.</p>
+      <p class="note">Settings backup exports do not include password material or biometric credential material.</p>
     </section>
 
     <section class="section">
