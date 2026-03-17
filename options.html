@@ -76,9 +76,13 @@
         <input id="lockOnWindowBlur" type="checkbox" />
         <span id="lockOnWindowBlurLabel">Lock immediately when all Chrome windows lose focus or are minimized</span>
       </label>
-      <label class="toggle">
-        <input id="requirePasswordOnDomainChange" type="checkbox" />
-        <span id="requirePasswordOnDomainChangeLabel">Require the password again when switching to a new domain</span>
+      <label>
+        <span id="unlockScopeLabel">Unlock scope</span>
+        <select id="unlockScope">
+          <option value="domain">Only current domain</option>
+          <option value="global">All domains in the current unlock session</option>
+        </select>
+        <small id="unlockScopeHint">If you choose all domains, entering the password once will also open newly created tabs until the session expires or you lock again.</small>
       </label>
     </section>
 

@@ -16,7 +16,7 @@ const unlockSessionMinutes = document.getElementById('unlockSessionMinutes');
 const maxAttempts = document.getElementById('maxAttempts');
 const lockoutMinutes = document.getElementById('lockoutMinutes');
 const lockOnWindowBlur = document.getElementById('lockOnWindowBlur');
-const requirePasswordOnDomainChange = document.getElementById('requirePasswordOnDomainChange');
+const unlockScope = document.getElementById('unlockScope');
 const defaultRegionMode = document.getElementById('defaultRegionMode');
 const maskPageIdentity = document.getElementById('maskPageIdentity');
 const whitelistInput = document.getElementById('whitelistInput');
@@ -451,7 +451,10 @@ function applyStaticTranslations() {
   document.getElementById('maxAttemptsLabel').textContent = t('options.policy.max_attempts_label');
   document.getElementById('lockoutMinutesLabel').textContent = t('options.policy.lockout_minutes_label');
   document.getElementById('lockOnWindowBlurLabel').textContent = t('options.policy.blur_lock_toggle');
-  document.getElementById('requirePasswordOnDomainChangeLabel').textContent = t('options.policy.domain_reauth_toggle');
+  document.getElementById('unlockScopeLabel').textContent = t('options.policy.unlock_scope_label');
+  document.getElementById('unlockScopeHint').textContent = t('options.policy.unlock_scope_hint');
+  unlockScope.options[0].textContent = t('options.policy.unlock_scope.domain');
+  unlockScope.options[1].textContent = t('options.policy.unlock_scope.global');
   document.getElementById('privacyTitle').textContent = t('options.privacy.title');
   document.getElementById('privacyHelp').textContent = t('options.privacy.help');
   addProfileBtn.textContent = t('common.action.add_profile');
@@ -538,9 +541,9 @@ async function loadState() {
     maxAttempts.value = state.maxAttempts || 5;
     lockoutMinutes.value = state.lockoutMinutes || 10;
     lockOnWindowBlur.checked = !!state.lockOnWindowBlur;
-    requirePasswordOnDomainChange.checked = typeof state.requirePasswordOnDomainChange === 'boolean'
-      ? state.requirePasswordOnDomainChange
-      : true;
+    unlockScope.value = typeof state.requirePasswordOnDomainChange === 'boolean' && !state.requirePasswordOnDomainChange
+      ? 'global'
+      : 'domain';
     defaultRegionMode.value = state.defaultRegionMode || 'blur';
     maskPageIdentity.checked = !!state.maskPageIdentity;
     whitelistInput.value = (state.whitelist || []).join('\n');
@@ -648,7 +651,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     maxAttempts: Math.max(1, Number(maxAttempts.value || 5)),
     lockoutMinutes: Math.max(1, Number(lockoutMinutes.value || 10)),
     lockOnWindowBlur: lockOnWindowBlur.checked,
-    requirePasswordOnDomainChange: requirePasswordOnDomainChange.checked,
+    requirePasswordOnDomainChange: unlockScope.value !== 'global',
     defaultRegionMode: defaultRegionMode.value,
     maskPageIdentity: maskPageIdentity.checked,
     domainProfiles: profiles,

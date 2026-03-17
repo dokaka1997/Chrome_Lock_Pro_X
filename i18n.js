@@ -480,6 +480,10 @@
   }
 
   Object.assign(messages.en, {
+    'options.policy.unlock_scope_label': 'Unlock scope',
+    'options.policy.unlock_scope_hint': 'If you choose all domains, entering the password once will also open newly created tabs until the session expires or you lock again.',
+    'options.policy.unlock_scope.domain': 'Only current domain',
+    'options.policy.unlock_scope.global': 'All domains in the current unlock session',
     'common.action.register_biometric': 'Register Fingerprint / Face',
     'common.action.remove_biometric': 'Remove Biometric Unlock',
     'options.biometric.title': 'Biometric Unlock',
@@ -527,6 +531,10 @@
   });
 
   Object.assign(messages.vi, {
+    'options.policy.unlock_scope_label': 'Pham vi mo khoa',
+    'options.policy.unlock_scope_hint': 'Neu chon tat ca domain, chi can nhap mat khau 1 lan thi cac tab moi tao trong cung phien se khong can nhap lai cho den khi het han hoac ban khoa lai.',
+    'options.policy.unlock_scope.domain': 'Chi domain hien tai',
+    'options.policy.unlock_scope.global': 'Tat ca domain trong phien hien tai',
     'common.action.register_biometric': 'Dang ky van tay / khuon mat',
     'common.action.remove_biometric': 'Xoa mo khoa sinh trac hoc',
     'options.biometric.title': 'Mo khoa sinh trac hoc',
