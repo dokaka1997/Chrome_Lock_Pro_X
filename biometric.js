@@ -189,6 +189,7 @@ async function createBiometricCredential() {
   const saveResponse = await chrome.runtime.sendMessage({
     type: 'COMPLETE_BIOMETRIC_SETUP',
     requestId,
+    request: currentContext?.request || null,
     credentialId: toBase64Url(credential.rawId),
     publicKey: toBase64(publicKey),
     algorithm,
@@ -227,6 +228,7 @@ async function performBiometricUnlock() {
   const completeResponse = await chrome.runtime.sendMessage({
     type: 'COMPLETE_BIOMETRIC_UNLOCK',
     requestId,
+    request: currentContext?.request || null,
     credentialId: toBase64Url(assertion.rawId),
     authenticatorData: toBase64Url(response.authenticatorData),
     clientDataJSON: toBase64Url(response.clientDataJSON),

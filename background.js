@@ -460,6 +460,25 @@ async function clearPendingBiometricRequest(requestId = '') {
   });
 }
 
+async function resolveBiometricRequest(message, expectedType, state = null) {
+  const requestId = String(message?.requestId || '').trim();
+  if (!requestId) return null;
+
+  const storedRequest = await getPendingBiometricRequestById(requestId, state);
+  if (storedRequest) {
+    return storedRequest.type === expectedType ? storedRequest : null;
+  }
+
+  const fallbackRequest = sanitizePendingBiometricRequest(message?.request);
+  if (!fallbackRequest) return null;
+  if (fallbackRequest.type !== expectedType || fallbackRequest.requestId !== requestId) return null;
+  if (fallbackRequest.createdAt > 0 && (now() - fallbackRequest.createdAt) > BIOMETRIC_REQUEST_TTL_MS) {
+    return null;
+  }
+
+  return fallbackRequest;
+}
+
 async function derivePasswordHash(password, saltBase64, iterations) {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -673,7 +692,7 @@ async function beginBiometricUnlock(sender, url, pageOnly, useDefaultSession, se
 
 async function completeBiometricSetup(message) {
   const state = await getState();
-  const request = await getPendingBiometricRequestById(message.requestId, state);
+  const request = await resolveBiometricRequest(message, 'setup', state);
   if (!request || request.type !== 'setup' || request.requestId !== message.requestId) {
     throw new Error(await tr('background.error.biometric_request_missing'));
   }
@@ -700,7 +719,7 @@ async function completeBiometricSetup(message) {
 async function completeBiometricUnlock(message) {
   const state = await getState();
   const settings = getSettingsSnapshot(state);
-  const request = await getPendingBiometricRequestById(message.requestId, state);
+  const request = await resolveBiometricRequest(message, 'unlock', state);
   if (!request || request.type !== 'unlock' || request.requestId !== message.requestId) {
     throw new Error(await tr('background.error.biometric_request_missing'));
   }
