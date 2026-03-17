@@ -78,6 +78,10 @@ const BIOMETRIC_REQUEST_TTL_MS = 10 * 60 * 1000;
 const MAX_PENDING_BIOMETRIC_REQUESTS = 8;
 const WINDOW_BLUR_LOCK_DELAY_MS = 350;
 const BIOMETRIC_AUTO_LOCK_GRACE_MS = 2500;
+const DEFAULT_TAB_AUDIO_VOLUME = 100;
+const MIN_TAB_AUDIO_VOLUME = 0;
+const MAX_TAB_AUDIO_VOLUME = 200;
+const OFFSCREEN_DOCUMENT_PATH = '\x6f\x66\x66\x73\x63\x72\x65\x65\x6e\x2e\x68\x74\x6d\x6c';
 const BIOMETRIC_ALGORITHMS = Object.freeze({
   ES256: -7,
   RS256: -257
@@ -85,9 +89,14 @@ const BIOMETRIC_ALGORITHMS = Object.freeze({
 
 let pendingWindowBlurLockTimer = null;
 let suppressWindowBlurLockUntil = 0;
+let creatingOffscreenDocument = null;
 
 function now() {
   return Date.now();
+}
+
+function normalizeTabAudioVolume(value, fallback = DEFAULT_TAB_AUDIO_VOLUME) {
+  return clampInteger(value, MIN_TAB_AUDIO_VOLUME, MAX_TAB_AUDIO_VOLUME, fallback);
 }
 
 function suppressWindowBlurLock(durationMs = BIOMETRIC_AUTO_LOCK_GRACE_MS) {
@@ -102,6 +111,162 @@ function cancelScheduledWindowBlurLock() {
   if (!pendingWindowBlurLockTimer) return;
   clearTimeout(pendingWindowBlurLockTimer);
   pendingWindowBlurLockTimer = null;
+}
+
+async function hasOffscreenDocument() {
+  const offscreenUrl = chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH);
+
+  if (typeof chrome.runtime.getContexts === '\x66\x75\x6e\x63\x74\x69\x6f\x6e') {
+    const contexts = await chrome.runtime.getContexts({
+      contextTypes: ['\x4f\x46\x46\x53\x43\x52\x45\x45\x4e\x5f\x44\x4f\x43\x55\x4d\x45\x4e\x54'],
+      documentUrls: [offscreenUrl]
+    });
+    return contexts.length > 0;
+  }
+
+  if (typeof clients?.matchAll === '\x66\x75\x6e\x63\x74\x69\x6f\x6e') {
+    const matchedClients = await clients.matchAll();
+    return matchedClients.some((client) => client.url === offscreenUrl);
+  }
+
+  return false;
+}
+
+async function ensureOffscreenDocument() {
+  if (await hasOffscreenDocument()) return;
+  if (creatingOffscreenDocument) {
+    await creatingOffscreenDocument;
+    return;
+  }
+
+  creatingOffscreenDocument = chrome.offscreen.createDocument({
+    url: OFFSCREEN_DOCUMENT_PATH,
+    reasons: [chrome.offscreen?.Reason?.USER_MEDIA || '\x55\x53\x45\x52\x5f\x4d\x45\x44\x49\x41'],
+    justification: '\x43\x6f\x6e\x74\x72\x6f\x6c\x20\x63\x61\x70\x74\x75\x72\x65\x64\x20\x74\x61\x62\x20\x61\x75\x64\x69\x6f\x20\x77\x68\x69\x6c\x65\x20\x74\x68\x65\x20\x70\x6f\x70\x75\x70\x20\x69\x73\x20\x63\x6c\x6f\x73\x65\x64\x2e'
+  });
+
+  try {
+    await creatingOffscreenDocument;
+  } finally {
+    creatingOffscreenDocument = null;
+  }
+}
+
+async function sendOffscreenMessage(message, ensureDocument = true) {
+  if (ensureDocument) {
+    await ensureOffscreenDocument();
+  } else if (!await hasOffscreenDocument()) {
+    return null;
+  }
+
+  return chrome.runtime.sendMessage({
+    target: '\x6f\x66\x66\x73\x63\x72\x65\x65\x6e',
+    ...message
+  });
+}
+
+async function maybeCloseOffscreenDocument() {
+  if (!chrome.offscreen?.closeDocument) return;
+  if (!await hasOffscreenDocument()) return;
+
+  try {
+    const summary = await sendOffscreenMessage({ type: '\x4f\x46\x46\x53\x43\x52\x45\x45\x4e\x5f\x47\x45\x54\x5f\x41\x55\x44\x49\x4f\x5f\x53\x55\x4d\x4d\x41\x52\x59' }, false);
+    if (summary?.ok && Number(summary.activeCount || 0) === 0) {
+      await chrome.offscreen.closeDocument();
+    }
+  } catch {
+    // Ignore close checks when the offscreen document is already gone.
+  }
+}
+
+async function getTabAudioState(tabId) {
+  if (!Number.isInteger(tabId)) {
+    return {
+      ok: false,
+      error: await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x61\x75\x64\x69\x6f\x5f\x74\x61\x62\x5f\x6d\x69\x73\x73\x69\x6e\x67')
+    };
+  }
+
+  try {
+    const response = await sendOffscreenMessage({
+      type: '\x4f\x46\x46\x53\x43\x52\x45\x45\x4e\x5f\x47\x45\x54\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f\x5f\x53\x54\x41\x54\x45',
+      tabId
+    }, false);
+
+    if (response?.ok) {
+      return {
+        ok: true,
+        active: !!response.active,
+        volumePercent: normalizeTabAudioVolume(response.volumePercent, DEFAULT_TAB_AUDIO_VOLUME)
+      };
+    }
+  } catch {
+    // Fall through to default state.
+  }
+
+  return {
+    ok: true,
+    active: false,
+    volumePercent: DEFAULT_TAB_AUDIO_VOLUME
+  };
+}
+
+async function setTabAudioVolume(tabId, volumePercent) {
+  if (!Number.isInteger(tabId)) {
+    throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x61\x75\x64\x69\x6f\x5f\x74\x61\x62\x5f\x6d\x69\x73\x73\x69\x6e\x67'));
+  }
+
+  const normalizedVolume = normalizeTabAudioVolume(volumePercent, DEFAULT_TAB_AUDIO_VOLUME);
+  const currentState = await getTabAudioState(tabId);
+  if (!currentState?.ok) {
+    throw new Error(currentState?.error || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x61\x75\x64\x69\x6f\x5f\x63\x6f\x6e\x74\x72\x6f\x6c\x5f\x66\x61\x69\x6c\x65\x64'));
+  }
+
+  if (normalizedVolume === DEFAULT_TAB_AUDIO_VOLUME) {
+    if (currentState.active) {
+      const response = await sendOffscreenMessage({
+        type: '\x4f\x46\x46\x53\x43\x52\x45\x45\x4e\x5f\x53\x54\x4f\x50\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f',
+        tabId
+      });
+
+      if (!response?.ok) {
+        throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x61\x75\x64\x69\x6f\x5f\x63\x6f\x6e\x74\x72\x6f\x6c\x5f\x66\x61\x69\x6c\x65\x64'));
+      }
+
+      await maybeCloseOffscreenDocument();
+    }
+
+    return {
+      ok: true,
+      active: false,
+      volumePercent: DEFAULT_TAB_AUDIO_VOLUME
+    };
+  }
+
+  const message = {
+    type: '\x4f\x46\x46\x53\x43\x52\x45\x45\x4e\x5f\x53\x45\x54\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f',
+    tabId,
+    volumePercent: normalizedVolume
+  };
+
+  if (!currentState.active) {
+    try {
+      message.streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId });
+    } catch {
+      throw new Error(await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x61\x75\x64\x69\x6f\x5f\x63\x61\x70\x74\x75\x72\x65\x5f\x66\x61\x69\x6c\x65\x64'));
+    }
+  }
+
+  const response = await sendOffscreenMessage(message);
+  if (!response?.ok) {
+    throw new Error(response?.error || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x61\x75\x64\x69\x6f\x5f\x63\x6f\x6e\x74\x72\x6f\x6c\x5f\x66\x61\x69\x6c\x65\x64'));
+  }
+
+  return {
+    ok: true,
+    active: !!response.active,
+    volumePercent: normalizeTabAudioVolume(response.volumePercent, normalizedVolume)
+  };
 }
 
 async function hasFocusedChromeWindow() {
@@ -1591,6 +1756,20 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
   await lockNow('\x77\x69\x6e\x64\x6f\x77\x2d\x6d\x69\x6e\x69\x6d\x69\x7a\x65\x64', { windowId: window.id || null });
 });
 
+chrome.tabs.onRemoved.addListener((tabId) => {
+  void (async () => {
+    try {
+      await sendOffscreenMessage({
+        type: '\x4f\x46\x46\x53\x43\x52\x45\x45\x4e\x5f\x53\x54\x4f\x50\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f',
+        tabId
+      }, false);
+      await maybeCloseOffscreenDocument();
+    } catch {
+      // Ignore cleanup failures for closed tabs.
+    }
+  })();
+});
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === ALARMS.autoLock) {
     await lockNow('\x69\x64\x6c\x65\x2d\x74\x69\x6d\x65\x6f\x75\x74');
@@ -1609,6 +1788,10 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.target === '\x6f\x66\x66\x73\x63\x72\x65\x65\x6e') {
+    return false;
+  }
+
   (async () => {
     await ensureInitialized();
     const state = await getState();
@@ -1618,6 +1801,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === '\x47\x45\x54\x5f\x53\x54\x41\x54\x45') {
       sendResponse(buildStateResponse(state));
+      return;
+    }
+
+    if (message.type === '\x47\x45\x54\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f\x5f\x53\x54\x41\x54\x45') {
+      sendResponse(await getTabAudioState(Number(message.tabId)));
+      return;
+    }
+
+    if (message.type === '\x53\x45\x54\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f\x5f\x4c\x45\x56\x45\x4c') {
+      try {
+        const response = await setTabAudioVolume(
+          Number(message.tabId),
+          message.volumePercent
+        );
+        sendResponse(response);
+      } catch (error) {
+        sendResponse({ ok: false, error: error?.message || await tr('\x62\x61\x63\x6b\x67\x72\x6f\x75\x6e\x64\x2e\x65\x72\x72\x6f\x72\x2e\x61\x75\x64\x69\x6f\x5f\x63\x6f\x6e\x74\x72\x6f\x6c\x5f\x66\x61\x69\x6c\x65\x64') });
+      }
+      return;
+    }
+
+    if (message.type === '\x4f\x46\x46\x53\x43\x52\x45\x45\x4e\x5f\x41\x55\x44\x49\x4f\x5f\x53\x54\x41\x54\x45\x5f\x43\x48\x41\x4e\x47\x45\x44') {
+      sendResponse({ ok: true });
       return;
     }
 

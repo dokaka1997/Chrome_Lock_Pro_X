@@ -39,6 +39,21 @@
       <button id="sessionBtn" class="secondary">15m Session</button>
     </section>
 
+    <section class="volume glass">
+      <div class="volume-top">
+        <div>
+          <div id="volumeTitle" class="mode-label">Current tab volume</div>
+          <div id="volumeState" class="volume-state">Set a value other than 100% to enable per-tab volume control.</div>
+        </div>
+        <div id="volumeBadge" class="volume-badge">100%</div>
+      </div>
+      <input id="volumeSlider" class="volume-slider" type="range" min="0" max="200" step="5" value="100" />
+      <div class="tools-grid">
+        <button id="muteTabBtn" class="secondary">Mute</button>
+        <button id="resetVolumeBtn" class="secondary">Reset 100%</button>
+      </div>
+    </section>
+
     <section class="tools glass">
       <div id="modeLabel" class="mode-label">New region default</div>
       <div class="mode-grid">

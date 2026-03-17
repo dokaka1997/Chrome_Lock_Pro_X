@@ -3,7 +3,7 @@
   "name": "Chrome Lock Pro X",
   "version": "2.1.0",
   "description": "Lock regular web pages with a password overlay, session timers, privacy regions, tamper logs, and advanced whitelist rules.",
-  "permissions": ["storage", "tabs", "alarms", "idle", "windows"],
+  "permissions": ["storage", "tabs", "alarms", "idle", "windows", "offscreen", "tabCapture"],
   "optional_permissions": ["browsingData"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {

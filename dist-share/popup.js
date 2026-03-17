@@ -13,6 +13,11 @@ const sessionNote = document.getElementById('\x73\x65\x73\x73\x69\x6f\x6e\x4e\x6
 const toolMsg = document.getElementById('\x74\x6f\x6f\x6c\x4d\x73\x67');
 const lockNowBtn = document.getElementById('\x6c\x6f\x63\x6b\x4e\x6f\x77\x42\x74\x6e');
 const sessionBtn = document.getElementById('\x73\x65\x73\x73\x69\x6f\x6e\x42\x74\x6e');
+const volumeState = document.getElementById('\x76\x6f\x6c\x75\x6d\x65\x53\x74\x61\x74\x65');
+const volumeSlider = document.getElementById('\x76\x6f\x6c\x75\x6d\x65\x53\x6c\x69\x64\x65\x72');
+const volumeBadge = document.getElementById('\x76\x6f\x6c\x75\x6d\x65\x42\x61\x64\x67\x65');
+const muteTabBtn = document.getElementById('\x6d\x75\x74\x65\x54\x61\x62\x42\x74\x6e');
+const resetVolumeBtn = document.getElementById('\x72\x65\x73\x65\x74\x56\x6f\x6c\x75\x6d\x65\x42\x74\x6e');
 const blurRegionBtn = document.getElementById('\x62\x6c\x75\x72\x52\x65\x67\x69\x6f\x6e\x42\x74\x6e');
 const clearRegionsBtn = document.getElementById('\x63\x6c\x65\x61\x72\x52\x65\x67\x69\x6f\x6e\x73\x42\x74\x6e');
 const optionsBtn = document.getElementById('\x6f\x70\x74\x69\x6f\x6e\x73\x42\x74\x6e');
@@ -30,6 +35,8 @@ const modeButtons = {
 
 let currentState = null;
 let currentBlurState = { ok: true, count: 0, selectionActive: false };
+let currentActiveTab = null;
+let currentAudioState = { ok: true, active: false, volumePercent: 100 };
 let ticker = null;
 
 function t(key, values) {
@@ -54,6 +61,19 @@ function formatDefaultSession(minutes) {
   return minutes > 0
     ? `${minutes} ${t('common.label.minutes_short')}`
     : t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x73\x65\x73\x73\x69\x6f\x6e\x2e\x69\x6e\x64\x65\x66\x69\x6e\x69\x74\x65');
+}
+
+function isSupportedAudioTab(tab) {
+  return !!tab?.id && /^https?:/i.test(String(tab.url || ''));
+}
+
+function setVolumeBadge(value) {
+  volumeBadge.textContent = `${value}%`;
+}
+
+function setVolumeMessage(text, isError = false) {
+  volumeState.textContent = text;
+  volumeState.classList.toggle('\x65\x72\x72\x6f\x72', isError);
 }
 
 function regionModeLabel(mode) {
@@ -117,7 +137,10 @@ function applyStaticTranslations() {
   document.getElementById('\x62\x6c\x75\x72\x5a\x6f\x6e\x65\x73\x4c\x61\x62\x65\x6c').textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x6c\x61\x62\x65\x6c\x2e\x62\x6c\x75\x72\x5f\x7a\x6f\x6e\x65\x73');
   document.getElementById('\x77\x68\x69\x74\x65\x6c\x69\x73\x74\x4c\x61\x62\x65\x6c').textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x6c\x61\x62\x65\x6c\x2e\x77\x68\x69\x74\x65\x6c\x69\x73\x74');
   document.getElementById('\x61\x74\x74\x65\x6d\x70\x74\x73\x4c\x61\x62\x65\x6c').textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x6c\x61\x62\x65\x6c\x2e\x61\x74\x74\x65\x6d\x70\x74\x73');
+  document.getElementById('\x76\x6f\x6c\x75\x6d\x65\x54\x69\x74\x6c\x65').textContent = t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x74\x69\x74\x6c\x65');
   document.getElementById('\x6d\x6f\x64\x65\x4c\x61\x62\x65\x6c').textContent = t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x64\x65\x66\x61\x75\x6c\x74\x5f\x72\x65\x67\x69\x6f\x6e\x5f\x6c\x61\x62\x65\x6c');
+  muteTabBtn.textContent = t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x6d\x75\x74\x65');
+  resetVolumeBtn.textContent = t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x72\x65\x73\x65\x74');
   blurModeBtn.textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x6d\x6f\x64\x65\x2e\x62\x6c\x75\x72');
   blackoutModeBtn.textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x6d\x6f\x64\x65\x2e\x62\x6c\x61\x63\x6b\x6f\x75\x74');
   pixelateModeBtn.textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x6d\x6f\x64\x65\x2e\x70\x69\x78\x65\x6c\x61\x74\x65');
@@ -126,6 +149,45 @@ function applyStaticTranslations() {
   optionsBtn.textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x61\x63\x74\x69\x6f\x6e\x2e\x6f\x70\x65\x6e\x5f\x73\x65\x74\x74\x69\x6e\x67\x73');
   document.getElementById('\x68\x6f\x74\x6b\x65\x79\x50\x72\x65\x66\x69\x78').textContent = t('\x63\x6f\x6d\x6d\x6f\x6e\x2e\x6e\x6f\x74\x65\x2e\x64\x65\x66\x61\x75\x6c\x74\x5f\x68\x6f\x74\x6b\x65\x79');
   toolMsg.textContent = toolMsg.textContent || t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x73\x61\x76\x65\x64\x5f\x62\x79\x5f\x64\x6f\x6d\x61\x69\x6e');
+}
+
+function renderAudioPanel(activeTab, audioState) {
+  const supported = isSupportedAudioTab(activeTab);
+  const normalizedVolume = Math.min(200, Math.max(0, Number(audioState?.volumePercent ?? 100)));
+
+  volumeSlider.value = `${normalizedVolume}`;
+  setVolumeBadge(normalizedVolume);
+
+  volumeSlider.disabled = !supported;
+  muteTabBtn.disabled = !supported || normalizedVolume === 0;
+  resetVolumeBtn.disabled = !supported || normalizedVolume === 100;
+
+  if (!supported) {
+    setVolumeMessage(t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x75\x6e\x73\x75\x70\x70\x6f\x72\x74\x65\x64'));
+    return;
+  }
+
+  if (!audioState?.ok) {
+    setVolumeMessage(audioState?.error || t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x65\x72\x72\x6f\x72\x2e\x63\x6f\x6e\x74\x72\x6f\x6c\x5f\x66\x61\x69\x6c\x65\x64'), true);
+    return;
+  }
+
+  if (!audioState.active) {
+    setVolumeMessage(t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x69\x6e\x61\x63\x74\x69\x76\x65'));
+    return;
+  }
+
+  if (normalizedVolume === 0) {
+    setVolumeMessage(t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x6d\x75\x74\x65\x64'));
+    return;
+  }
+
+  if (normalizedVolume > 100) {
+    setVolumeMessage(t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x62\x6f\x6f\x73\x74\x69\x6e\x67', { volume: normalizedVolume }));
+    return;
+  }
+
+  setVolumeMessage(t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x61\x63\x74\x69\x76\x65', { volume: normalizedVolume }));
 }
 
 async function getActiveTab() {
@@ -221,46 +283,45 @@ function render(state, blurState) {
 
   if (!blurState?.ok) {
     setToolMessage(blurState.error, true);
-    return;
-  }
-
-  if (blurState.selectionActive) {
+  } else if (blurState.selectionActive) {
     setToolMessage(t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x73\x65\x6c\x65\x63\x74\x69\x6f\x6e\x5f\x61\x63\x74\x69\x76\x65'));
-    return;
+  } else {
+    const maskedSuffix = blurState.titleMasked ? t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x6d\x61\x73\x6b\x65\x64\x5f\x73\x75\x66\x66\x69\x78') : t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x70\x65\x72\x69\x6f\x64');
+
+    if (activeProfileName) {
+      setToolMessage(t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x70\x72\x6f\x66\x69\x6c\x65\x5f\x70\x6f\x6c\x69\x63\x79', {
+        name: activeProfileName,
+        policies: formatProfilePolicies(blurState),
+        mode: regionModeLabel(activeMode),
+        masked: maskedSuffix
+      }));
+    } else if (blurCount > 0) {
+      setToolMessage(t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x72\x65\x67\x69\x6f\x6e\x73\x5f\x70\x72\x65\x73\x65\x6e\x74', {
+        count: blurCount,
+        mode: regionModeLabel(activeMode),
+        masked: maskedSuffix
+      }));
+    } else {
+      setToolMessage(t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x64\x65\x66\x61\x75\x6c\x74\x5f\x6d\x6f\x64\x65', {
+        defaultMode: regionModeLabel(defaultMode),
+        activeMode: regionModeLabel(activeMode),
+        masked: maskedSuffix
+      }));
+    }
   }
 
-  const maskedSuffix = blurState.titleMasked ? t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x6d\x61\x73\x6b\x65\x64\x5f\x73\x75\x66\x66\x69\x78') : t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x70\x65\x72\x69\x6f\x64');
-
-  if (activeProfileName) {
-    setToolMessage(t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x70\x72\x6f\x66\x69\x6c\x65\x5f\x70\x6f\x6c\x69\x63\x79', {
-      name: activeProfileName,
-      policies: formatProfilePolicies(blurState),
-      mode: regionModeLabel(activeMode),
-      masked: maskedSuffix
-    }));
-    return;
-  }
-
-  if (blurCount > 0) {
-    setToolMessage(t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x72\x65\x67\x69\x6f\x6e\x73\x5f\x70\x72\x65\x73\x65\x6e\x74', {
-      count: blurCount,
-      mode: regionModeLabel(activeMode),
-      masked: maskedSuffix
-    }));
-    return;
-  }
-
-  setToolMessage(t('\x70\x6f\x70\x75\x70\x2e\x74\x6f\x6f\x6c\x2e\x64\x65\x66\x61\x75\x6c\x74\x5f\x6d\x6f\x64\x65', {
-    defaultMode: regionModeLabel(defaultMode),
-    activeMode: regionModeLabel(activeMode),
-    masked: maskedSuffix
-  }));
+  renderAudioPanel(currentActiveTab, currentAudioState);
 }
 
 async function loadState() {
-  const [state, blurState] = await Promise.all([
+  currentActiveTab = await getActiveTab();
+
+  const [state, blurState, audioState] = await Promise.all([
     chrome.runtime.sendMessage({ type: '\x47\x45\x54\x5f\x53\x54\x41\x54\x45' }),
-    sendMessageToActiveTab({ type: '\x47\x45\x54\x5f\x42\x4c\x55\x52\x5f\x52\x45\x47\x49\x4f\x4e\x5f\x53\x54\x41\x54\x45' })
+    sendMessageToActiveTab({ type: '\x47\x45\x54\x5f\x42\x4c\x55\x52\x5f\x52\x45\x47\x49\x4f\x4e\x5f\x53\x54\x41\x54\x45' }),
+    isSupportedAudioTab(currentActiveTab)
+      ? chrome.runtime.sendMessage({ type: '\x47\x45\x54\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f\x5f\x53\x54\x41\x54\x45', tabId: currentActiveTab.id })
+      : Promise.resolve({ ok: true, active: false, volumePercent: 100 })
   ]);
 
   if (state?.ok) {
@@ -268,6 +329,29 @@ async function loadState() {
   }
 
   currentBlurState = blurState || { ok: false, error: t('\x70\x6f\x70\x75\x70\x2e\x65\x72\x72\x6f\x72\x2e\x70\x72\x69\x76\x61\x63\x79\x5f\x73\x74\x61\x74\x65') };
+  currentAudioState = audioState || { ok: false, error: t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x65\x72\x72\x6f\x72\x2e\x73\x74\x61\x74\x65') };
+
+  if (currentState) {
+    render(currentState, currentBlurState);
+  }
+}
+
+async function applyVolumeToCurrentTab(nextVolume) {
+  if (!isSupportedAudioTab(currentActiveTab)) {
+    currentAudioState = { ok: false, error: t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x75\x6e\x73\x75\x70\x70\x6f\x72\x74\x65\x64') };
+    if (currentState) render(currentState, currentBlurState);
+    return;
+  }
+
+  const response = await chrome.runtime.sendMessage({
+    type: '\x53\x45\x54\x5f\x54\x41\x42\x5f\x41\x55\x44\x49\x4f\x5f\x4c\x45\x56\x45\x4c',
+    tabId: currentActiveTab.id,
+    volumePercent: nextVolume
+  });
+
+  currentAudioState = response?.ok
+    ? response
+    : { ok: false, error: response?.error || t('\x70\x6f\x70\x75\x70\x2e\x61\x75\x64\x69\x6f\x2e\x65\x72\x72\x6f\x72\x2e\x63\x6f\x6e\x74\x72\x6f\x6c\x5f\x66\x61\x69\x6c\x65\x64'), volumePercent: nextVolume };
 
   if (currentState) {
     render(currentState, currentBlurState);
@@ -289,6 +373,26 @@ sessionBtn.addEventListener('\x63\x6c\x69\x63\x6b', async () => {
     source: '\x70\x6f\x70\x75\x70\x2d\x73\x65\x73\x73\x69\x6f\x6e'
   });
   await loadState();
+});
+
+volumeSlider.addEventListener('\x69\x6e\x70\x75\x74', () => {
+  setVolumeBadge(Number(volumeSlider.value || 100));
+});
+
+volumeSlider.addEventListener('\x63\x68\x61\x6e\x67\x65', async () => {
+  await applyVolumeToCurrentTab(Number(volumeSlider.value || 100));
+});
+
+muteTabBtn.addEventListener('\x63\x6c\x69\x63\x6b', async () => {
+  volumeSlider.value = '\x30';
+  setVolumeBadge(0);
+  await applyVolumeToCurrentTab(0);
+});
+
+resetVolumeBtn.addEventListener('\x63\x6c\x69\x63\x6b', async () => {
+  volumeSlider.value = '\x31\x30\x30';
+  setVolumeBadge(100);
+  await applyVolumeToCurrentTab(100);
 });
 
 blurRegionBtn.addEventListener('\x63\x6c\x69\x63\x6b', async () => {

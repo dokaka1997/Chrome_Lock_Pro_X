@@ -13,6 +13,11 @@ const sessionNote = document.getElementById('sessionNote');
 const toolMsg = document.getElementById('toolMsg');
 const lockNowBtn = document.getElementById('lockNowBtn');
 const sessionBtn = document.getElementById('sessionBtn');
+const volumeState = document.getElementById('volumeState');
+const volumeSlider = document.getElementById('volumeSlider');
+const volumeBadge = document.getElementById('volumeBadge');
+const muteTabBtn = document.getElementById('muteTabBtn');
+const resetVolumeBtn = document.getElementById('resetVolumeBtn');
 const blurRegionBtn = document.getElementById('blurRegionBtn');
 const clearRegionsBtn = document.getElementById('clearRegionsBtn');
 const optionsBtn = document.getElementById('optionsBtn');
@@ -30,6 +35,8 @@ const modeButtons = {
 
 let currentState = null;
 let currentBlurState = { ok: true, count: 0, selectionActive: false };
+let currentActiveTab = null;
+let currentAudioState = { ok: true, active: false, volumePercent: 100 };
 let ticker = null;
 
 function t(key, values) {
@@ -54,6 +61,19 @@ function formatDefaultSession(minutes) {
   return minutes > 0
     ? `${minutes} ${t('common.label.minutes_short')}`
     : t('common.session.indefinite');
+}
+
+function isSupportedAudioTab(tab) {
+  return !!tab?.id && /^https?:/i.test(String(tab.url || ''));
+}
+
+function setVolumeBadge(value) {
+  volumeBadge.textContent = `${value}%`;
+}
+
+function setVolumeMessage(text, isError = false) {
+  volumeState.textContent = text;
+  volumeState.classList.toggle('error', isError);
 }
 
 function regionModeLabel(mode) {
@@ -117,7 +137,10 @@ function applyStaticTranslations() {
   document.getElementById('blurZonesLabel').textContent = t('common.label.blur_zones');
   document.getElementById('whitelistLabel').textContent = t('common.label.whitelist');
   document.getElementById('attemptsLabel').textContent = t('common.label.attempts');
+  document.getElementById('volumeTitle').textContent = t('popup.audio.title');
   document.getElementById('modeLabel').textContent = t('popup.tool.default_region_label');
+  muteTabBtn.textContent = t('popup.audio.mute');
+  resetVolumeBtn.textContent = t('popup.audio.reset');
   blurModeBtn.textContent = t('common.mode.blur');
   blackoutModeBtn.textContent = t('common.mode.blackout');
   pixelateModeBtn.textContent = t('common.mode.pixelate');
@@ -126,6 +149,45 @@ function applyStaticTranslations() {
   optionsBtn.textContent = t('common.action.open_settings');
   document.getElementById('hotkeyPrefix').textContent = t('common.note.default_hotkey');
   toolMsg.textContent = toolMsg.textContent || t('popup.tool.saved_by_domain');
+}
+
+function renderAudioPanel(activeTab, audioState) {
+  const supported = isSupportedAudioTab(activeTab);
+  const normalizedVolume = Math.min(200, Math.max(0, Number(audioState?.volumePercent ?? 100)));
+
+  volumeSlider.value = `${normalizedVolume}`;
+  setVolumeBadge(normalizedVolume);
+
+  volumeSlider.disabled = !supported;
+  muteTabBtn.disabled = !supported || normalizedVolume === 0;
+  resetVolumeBtn.disabled = !supported || normalizedVolume === 100;
+
+  if (!supported) {
+    setVolumeMessage(t('popup.audio.unsupported'));
+    return;
+  }
+
+  if (!audioState?.ok) {
+    setVolumeMessage(audioState?.error || t('popup.audio.error.control_failed'), true);
+    return;
+  }
+
+  if (!audioState.active) {
+    setVolumeMessage(t('popup.audio.inactive'));
+    return;
+  }
+
+  if (normalizedVolume === 0) {
+    setVolumeMessage(t('popup.audio.muted'));
+    return;
+  }
+
+  if (normalizedVolume > 100) {
+    setVolumeMessage(t('popup.audio.boosting', { volume: normalizedVolume }));
+    return;
+  }
+
+  setVolumeMessage(t('popup.audio.active', { volume: normalizedVolume }));
 }
 
 async function getActiveTab() {
@@ -221,46 +283,45 @@ function render(state, blurState) {
 
   if (!blurState?.ok) {
     setToolMessage(blurState.error, true);
-    return;
-  }
-
-  if (blurState.selectionActive) {
+  } else if (blurState.selectionActive) {
     setToolMessage(t('popup.tool.selection_active'));
-    return;
+  } else {
+    const maskedSuffix = blurState.titleMasked ? t('popup.tool.masked_suffix') : t('popup.tool.period');
+
+    if (activeProfileName) {
+      setToolMessage(t('popup.tool.profile_policy', {
+        name: activeProfileName,
+        policies: formatProfilePolicies(blurState),
+        mode: regionModeLabel(activeMode),
+        masked: maskedSuffix
+      }));
+    } else if (blurCount > 0) {
+      setToolMessage(t('popup.tool.regions_present', {
+        count: blurCount,
+        mode: regionModeLabel(activeMode),
+        masked: maskedSuffix
+      }));
+    } else {
+      setToolMessage(t('popup.tool.default_mode', {
+        defaultMode: regionModeLabel(defaultMode),
+        activeMode: regionModeLabel(activeMode),
+        masked: maskedSuffix
+      }));
+    }
   }
 
-  const maskedSuffix = blurState.titleMasked ? t('popup.tool.masked_suffix') : t('popup.tool.period');
-
-  if (activeProfileName) {
-    setToolMessage(t('popup.tool.profile_policy', {
-      name: activeProfileName,
-      policies: formatProfilePolicies(blurState),
-      mode: regionModeLabel(activeMode),
-      masked: maskedSuffix
-    }));
-    return;
-  }
-
-  if (blurCount > 0) {
-    setToolMessage(t('popup.tool.regions_present', {
-      count: blurCount,
-      mode: regionModeLabel(activeMode),
-      masked: maskedSuffix
-    }));
-    return;
-  }
-
-  setToolMessage(t('popup.tool.default_mode', {
-    defaultMode: regionModeLabel(defaultMode),
-    activeMode: regionModeLabel(activeMode),
-    masked: maskedSuffix
-  }));
+  renderAudioPanel(currentActiveTab, currentAudioState);
 }
 
 async function loadState() {
-  const [state, blurState] = await Promise.all([
+  currentActiveTab = await getActiveTab();
+
+  const [state, blurState, audioState] = await Promise.all([
     chrome.runtime.sendMessage({ type: 'GET_STATE' }),
-    sendMessageToActiveTab({ type: 'GET_BLUR_REGION_STATE' })
+    sendMessageToActiveTab({ type: 'GET_BLUR_REGION_STATE' }),
+    isSupportedAudioTab(currentActiveTab)
+      ? chrome.runtime.sendMessage({ type: 'GET_TAB_AUDIO_STATE', tabId: currentActiveTab.id })
+      : Promise.resolve({ ok: true, active: false, volumePercent: 100 })
   ]);
 
   if (state?.ok) {
@@ -268,6 +329,29 @@ async function loadState() {
   }
 
   currentBlurState = blurState || { ok: false, error: t('popup.error.privacy_state') };
+  currentAudioState = audioState || { ok: false, error: t('popup.audio.error.state') };
+
+  if (currentState) {
+    render(currentState, currentBlurState);
+  }
+}
+
+async function applyVolumeToCurrentTab(nextVolume) {
+  if (!isSupportedAudioTab(currentActiveTab)) {
+    currentAudioState = { ok: false, error: t('popup.audio.unsupported') };
+    if (currentState) render(currentState, currentBlurState);
+    return;
+  }
+
+  const response = await chrome.runtime.sendMessage({
+    type: 'SET_TAB_AUDIO_LEVEL',
+    tabId: currentActiveTab.id,
+    volumePercent: nextVolume
+  });
+
+  currentAudioState = response?.ok
+    ? response
+    : { ok: false, error: response?.error || t('popup.audio.error.control_failed'), volumePercent: nextVolume };
 
   if (currentState) {
     render(currentState, currentBlurState);
@@ -289,6 +373,26 @@ sessionBtn.addEventListener('click', async () => {
     source: 'popup-session'
   });
   await loadState();
+});
+
+volumeSlider.addEventListener('input', () => {
+  setVolumeBadge(Number(volumeSlider.value || 100));
+});
+
+volumeSlider.addEventListener('change', async () => {
+  await applyVolumeToCurrentTab(Number(volumeSlider.value || 100));
+});
+
+muteTabBtn.addEventListener('click', async () => {
+  volumeSlider.value = '0';
+  setVolumeBadge(0);
+  await applyVolumeToCurrentTab(0);
+});
+
+resetVolumeBtn.addEventListener('click', async () => {
+  volumeSlider.value = '100';
+  setVolumeBadge(100);
+  await applyVolumeToCurrentTab(100);
 });
 
 blurRegionBtn.addEventListener('click', async () => {

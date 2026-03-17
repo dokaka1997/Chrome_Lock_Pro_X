@@ -78,6 +78,10 @@ const BIOMETRIC_REQUEST_TTL_MS = 10 * 60 * 1000;
 const MAX_PENDING_BIOMETRIC_REQUESTS = 8;
 const WINDOW_BLUR_LOCK_DELAY_MS = 350;
 const BIOMETRIC_AUTO_LOCK_GRACE_MS = 2500;
+const DEFAULT_TAB_AUDIO_VOLUME = 100;
+const MIN_TAB_AUDIO_VOLUME = 0;
+const MAX_TAB_AUDIO_VOLUME = 200;
+const OFFSCREEN_DOCUMENT_PATH = 'offscreen.html';
 const BIOMETRIC_ALGORITHMS = Object.freeze({
   ES256: -7,
   RS256: -257
@@ -85,9 +89,14 @@ const BIOMETRIC_ALGORITHMS = Object.freeze({
 
 let pendingWindowBlurLockTimer = null;
 let suppressWindowBlurLockUntil = 0;
+let creatingOffscreenDocument = null;
 
 function now() {
   return Date.now();
+}
+
+function normalizeTabAudioVolume(value, fallback = DEFAULT_TAB_AUDIO_VOLUME) {
+  return clampInteger(value, MIN_TAB_AUDIO_VOLUME, MAX_TAB_AUDIO_VOLUME, fallback);
 }
 
 function suppressWindowBlurLock(durationMs = BIOMETRIC_AUTO_LOCK_GRACE_MS) {
@@ -102,6 +111,162 @@ function cancelScheduledWindowBlurLock() {
   if (!pendingWindowBlurLockTimer) return;
   clearTimeout(pendingWindowBlurLockTimer);
   pendingWindowBlurLockTimer = null;
+}
+
+async function hasOffscreenDocument() {
+  const offscreenUrl = chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH);
+
+  if (typeof chrome.runtime.getContexts === 'function') {
+    const contexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [offscreenUrl]
+    });
+    return contexts.length > 0;
+  }
+
+  if (typeof clients?.matchAll === 'function') {
+    const matchedClients = await clients.matchAll();
+    return matchedClients.some((client) => client.url === offscreenUrl);
+  }
+
+  return false;
+}
+
+async function ensureOffscreenDocument() {
+  if (await hasOffscreenDocument()) return;
+  if (creatingOffscreenDocument) {
+    await creatingOffscreenDocument;
+    return;
+  }
+
+  creatingOffscreenDocument = chrome.offscreen.createDocument({
+    url: OFFSCREEN_DOCUMENT_PATH,
+    reasons: [chrome.offscreen?.Reason?.USER_MEDIA || 'USER_MEDIA'],
+    justification: 'Control captured tab audio while the popup is closed.'
+  });
+
+  try {
+    await creatingOffscreenDocument;
+  } finally {
+    creatingOffscreenDocument = null;
+  }
+}
+
+async function sendOffscreenMessage(message, ensureDocument = true) {
+  if (ensureDocument) {
+    await ensureOffscreenDocument();
+  } else if (!await hasOffscreenDocument()) {
+    return null;
+  }
+
+  return chrome.runtime.sendMessage({
+    target: 'offscreen',
+    ...message
+  });
+}
+
+async function maybeCloseOffscreenDocument() {
+  if (!chrome.offscreen?.closeDocument) return;
+  if (!await hasOffscreenDocument()) return;
+
+  try {
+    const summary = await sendOffscreenMessage({ type: 'OFFSCREEN_GET_AUDIO_SUMMARY' }, false);
+    if (summary?.ok && Number(summary.activeCount || 0) === 0) {
+      await chrome.offscreen.closeDocument();
+    }
+  } catch {
+    // Ignore close checks when the offscreen document is already gone.
+  }
+}
+
+async function getTabAudioState(tabId) {
+  if (!Number.isInteger(tabId)) {
+    return {
+      ok: false,
+      error: await tr('background.error.audio_tab_missing')
+    };
+  }
+
+  try {
+    const response = await sendOffscreenMessage({
+      type: 'OFFSCREEN_GET_TAB_AUDIO_STATE',
+      tabId
+    }, false);
+
+    if (response?.ok) {
+      return {
+        ok: true,
+        active: !!response.active,
+        volumePercent: normalizeTabAudioVolume(response.volumePercent, DEFAULT_TAB_AUDIO_VOLUME)
+      };
+    }
+  } catch {
+    // Fall through to default state.
+  }
+
+  return {
+    ok: true,
+    active: false,
+    volumePercent: DEFAULT_TAB_AUDIO_VOLUME
+  };
+}
+
+async function setTabAudioVolume(tabId, volumePercent) {
+  if (!Number.isInteger(tabId)) {
+    throw new Error(await tr('background.error.audio_tab_missing'));
+  }
+
+  const normalizedVolume = normalizeTabAudioVolume(volumePercent, DEFAULT_TAB_AUDIO_VOLUME);
+  const currentState = await getTabAudioState(tabId);
+  if (!currentState?.ok) {
+    throw new Error(currentState?.error || await tr('background.error.audio_control_failed'));
+  }
+
+  if (normalizedVolume === DEFAULT_TAB_AUDIO_VOLUME) {
+    if (currentState.active) {
+      const response = await sendOffscreenMessage({
+        type: 'OFFSCREEN_STOP_TAB_AUDIO',
+        tabId
+      });
+
+      if (!response?.ok) {
+        throw new Error(await tr('background.error.audio_control_failed'));
+      }
+
+      await maybeCloseOffscreenDocument();
+    }
+
+    return {
+      ok: true,
+      active: false,
+      volumePercent: DEFAULT_TAB_AUDIO_VOLUME
+    };
+  }
+
+  const message = {
+    type: 'OFFSCREEN_SET_TAB_AUDIO',
+    tabId,
+    volumePercent: normalizedVolume
+  };
+
+  if (!currentState.active) {
+    try {
+      message.streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId });
+    } catch {
+      throw new Error(await tr('background.error.audio_capture_failed'));
+    }
+  }
+
+  const response = await sendOffscreenMessage(message);
+  if (!response?.ok) {
+    throw new Error(response?.error || await tr('background.error.audio_control_failed'));
+  }
+
+  return {
+    ok: true,
+    active: !!response.active,
+    volumePercent: normalizeTabAudioVolume(response.volumePercent, normalizedVolume)
+  };
 }
 
 async function hasFocusedChromeWindow() {
@@ -1591,6 +1756,20 @@ chrome.windows.onBoundsChanged.addListener(async (window) => {
   await lockNow('window-minimized', { windowId: window.id || null });
 });
 
+chrome.tabs.onRemoved.addListener((tabId) => {
+  void (async () => {
+    try {
+      await sendOffscreenMessage({
+        type: 'OFFSCREEN_STOP_TAB_AUDIO',
+        tabId
+      }, false);
+      await maybeCloseOffscreenDocument();
+    } catch {
+      // Ignore cleanup failures for closed tabs.
+    }
+  })();
+});
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === ALARMS.autoLock) {
     await lockNow('idle-timeout');
@@ -1609,6 +1788,10 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.target === 'offscreen') {
+    return false;
+  }
+
   (async () => {
     await ensureInitialized();
     const state = await getState();
@@ -1618,6 +1801,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === 'GET_STATE') {
       sendResponse(buildStateResponse(state));
+      return;
+    }
+
+    if (message.type === 'GET_TAB_AUDIO_STATE') {
+      sendResponse(await getTabAudioState(Number(message.tabId)));
+      return;
+    }
+
+    if (message.type === 'SET_TAB_AUDIO_LEVEL') {
+      try {
+        const response = await setTabAudioVolume(
+          Number(message.tabId),
+          message.volumePercent
+        );
+        sendResponse(response);
+      } catch (error) {
+        sendResponse({ ok: false, error: error?.message || await tr('background.error.audio_control_failed') });
+      }
+      return;
+    }
+
+    if (message.type === 'OFFSCREEN_AUDIO_STATE_CHANGED') {
+      sendResponse({ ok: true });
       return;
     }
 
