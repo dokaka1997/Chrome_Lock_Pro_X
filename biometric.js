@@ -13,6 +13,11 @@ let currentContext = null;
 let busy = false;
 let completed = false;
 
+const BIOMETRIC_ALGORITHMS = Object.freeze({
+  ES256: -7,
+  RS256: -257
+});
+
 function t(key, values) {
   return i18n.t(key, values);
 }
@@ -168,7 +173,10 @@ async function createBiometricCredential() {
         name: 'chrome-lock-pro-x',
         displayName: 'Chrome Lock Pro X'
       },
-      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+      pubKeyCredParams: [
+        { type: 'public-key', alg: BIOMETRIC_ALGORITHMS.ES256 },
+        { type: 'public-key', alg: BIOMETRIC_ALGORITHMS.RS256 }
+      ],
       authenticatorSelection: {
         authenticatorAttachment: 'platform',
         residentKey: 'preferred',
@@ -182,7 +190,11 @@ async function createBiometricCredential() {
   const response = credential?.response;
   const publicKey = response?.getPublicKey?.();
   const algorithm = response?.getPublicKeyAlgorithm?.();
-  if (!credential?.rawId || !publicKey || algorithm !== -7) {
+  if (
+    !credential?.rawId
+    || !publicKey
+    || ![BIOMETRIC_ALGORITHMS.ES256, BIOMETRIC_ALGORITHMS.RS256].includes(algorithm)
+  ) {
     throw new Error(t('biometric.window.error.no_public_key'));
   }
 

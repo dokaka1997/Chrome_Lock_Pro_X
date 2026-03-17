@@ -74,6 +74,10 @@ const ALARMS = {
 
 const BIOMETRIC_REQUEST_TTL_MS = 10 * 60 * 1000;
 const MAX_PENDING_BIOMETRIC_REQUESTS = 8;
+const BIOMETRIC_ALGORITHMS = Object.freeze({
+  ES256: -7,
+  RS256: -257
+});
 
 function now() {
   return Date.now();
@@ -219,6 +223,10 @@ function hasBiometricCredential(state) {
     && !!state[KEYS.biometricCredentialId]
     && typeof state[KEYS.biometricPublicKey] === 'string'
     && !!state[KEYS.biometricPublicKey];
+}
+
+function isSupportedBiometricAlgorithm(value) {
+  return value === BIOMETRIC_ALGORITHMS.ES256 || value === BIOMETRIC_ALGORITHMS.RS256;
 }
 
 function sanitizePendingBiometricRequest(value) {
@@ -611,84 +619,126 @@ function getExtensionOrigin() {
   return chrome.runtime.getURL('').replace(/\/$/, '');
 }
 
+async function getAcceptedRpIdHashes() {
+  const candidates = [
+    getExtensionOrigin(),
+    String(chrome.runtime.id || '').trim()
+  ].filter(Boolean);
+
+  const uniqueCandidates = [...new Set(candidates)];
+  const hashes = await Promise.all(
+    uniqueCandidates.map((candidate) => sha256Bytes(new TextEncoder().encode(candidate)))
+  );
+
+  return hashes;
+}
+
+function createBiometricVerificationError(genericError, reason) {
+  const error = new Error(`${genericError} [${reason}]`);
+  error.biometricReason = reason;
+  return error;
+}
+
 async function verifyBiometricAssertion(message, request, state) {
   const genericError = await tr('background.error.biometric_verification_failed');
+  const fail = (reason) => {
+    throw createBiometricVerificationError(genericError, reason);
+  };
+
   if (!hasBiometricCredential(state)) {
     throw new Error(await tr('background.error.biometric_not_setup'));
   }
 
-  if (Number(state[KEYS.biometricAlgorithm] || DEFAULTS.biometricAlgorithm) !== -7) {
-    throw new Error(genericError);
+  const biometricAlgorithm = Number(state[KEYS.biometricAlgorithm] || DEFAULTS.biometricAlgorithm);
+  if (!isSupportedBiometricAlgorithm(biometricAlgorithm)) {
+    fail('unsupported_algorithm');
   }
 
   const rawId = fromBase64Url(message.credentialId);
   if (toBase64Url(rawId) !== state[KEYS.biometricCredentialId]) {
-    throw new Error(genericError);
+    fail('credential_id_mismatch');
   }
 
   const clientDataJSON = fromBase64Url(message.clientDataJSON);
   const authenticatorData = fromBase64Url(message.authenticatorData);
   const signature = fromBase64Url(message.signature);
   if (authenticatorData.length < 37 || signature.length === 0) {
-    throw new Error(genericError);
+    fail('malformed_assertion');
   }
 
   let clientData = null;
   try {
     clientData = JSON.parse(new TextDecoder().decode(clientDataJSON));
   } catch {
-    throw new Error(genericError);
+    fail('client_data_parse_failed');
   }
 
   if (clientData?.type !== 'webauthn.get') {
-    throw new Error(genericError);
+    fail('client_data_type_mismatch');
   }
   if (clientData?.challenge !== request.challenge) {
-    throw new Error(genericError);
+    fail('challenge_mismatch');
   }
   if (clientData?.origin !== getExtensionOrigin()) {
-    throw new Error(genericError);
+    fail('origin_mismatch');
   }
 
-  const expectedRpIdHash = await sha256Bytes(new TextEncoder().encode(chrome.runtime.id));
   const actualRpIdHash = authenticatorData.slice(0, 32);
-  if (!expectedRpIdHash.every((byte, index) => actualRpIdHash[index] === byte)) {
-    throw new Error(genericError);
+  const acceptedRpIdHashes = await getAcceptedRpIdHashes();
+  const matchesRpIdHash = acceptedRpIdHashes.some((expectedRpIdHash) => (
+    expectedRpIdHash.every((byte, index) => actualRpIdHash[index] === byte)
+  ));
+  if (!matchesRpIdHash) {
+    fail('rp_id_hash_mismatch');
   }
 
   const flags = authenticatorData[32];
   const userPresent = (flags & 0x01) !== 0;
   const userVerified = (flags & 0x04) !== 0;
   if (!userPresent || !userVerified) {
-    throw new Error(genericError);
+    fail('user_presence_or_verification_missing');
   }
-
-  const verificationKey = await crypto.subtle.importKey(
-    'spki',
-    fromBase64(state[KEYS.biometricPublicKey]),
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['verify']
-  );
 
   const clientDataHash = await sha256Bytes(clientDataJSON);
   const signedData = concatBytes(authenticatorData, clientDataHash);
+  let verificationKey;
+  let verifyAlgorithm;
   let normalizedSignature = signature;
+
   try {
-    normalizedSignature = convertDerEcdsaSignatureToP1363(signature, 32);
+    if (biometricAlgorithm === BIOMETRIC_ALGORITHMS.ES256) {
+      verificationKey = await crypto.subtle.importKey(
+        'spki',
+        fromBase64(state[KEYS.biometricPublicKey]),
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false,
+        ['verify']
+      );
+      verifyAlgorithm = { name: 'ECDSA', hash: 'SHA-256' };
+      normalizedSignature = convertDerEcdsaSignatureToP1363(signature, 32);
+    } else {
+      verificationKey = await crypto.subtle.importKey(
+        'spki',
+        fromBase64(state[KEYS.biometricPublicKey]),
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false,
+        ['verify']
+      );
+      verifyAlgorithm = { name: 'RSASSA-PKCS1-v1_5' };
+    }
   } catch {
-    throw new Error(genericError);
+    fail('public_key_import_or_signature_parse_failed');
   }
 
   const verified = await crypto.subtle.verify(
-    { name: 'ECDSA', hash: 'SHA-256' },
+    verifyAlgorithm,
     verificationKey,
     normalizedSignature,
     signedData
   );
 
   if (!verified) {
-    throw new Error(genericError);
+    fail('signature_mismatch');
   }
 }
 
@@ -791,7 +841,7 @@ async function completeBiometricSetup(message) {
   const credentialId = String(message.credentialId || '').trim();
   const publicKey = String(message.publicKey || '').trim();
   const algorithm = Number(message.algorithm);
-  if (!credentialId || !publicKey || algorithm !== -7) {
+  if (!credentialId || !publicKey || !isSupportedBiometricAlgorithm(algorithm)) {
     throw new Error(await tr('background.error.biometric_public_key_missing'));
   }
 
@@ -821,7 +871,11 @@ async function completeBiometricUnlock(message) {
     await appendLog({
       type: 'security',
       action: 'biometric-verification-failed',
-      url: safeUrlForLog(request.url)
+      url: safeUrlForLog(request.url),
+      meta: {
+        reason: error?.biometricReason || 'unknown',
+        algorithm: Number(state[KEYS.biometricAlgorithm] || DEFAULTS.biometricAlgorithm)
+      }
     });
     await clearPendingBiometricRequest(request.requestId);
     await notifyBiometricResult(request, { ok: true, success: false, error: error.message });
