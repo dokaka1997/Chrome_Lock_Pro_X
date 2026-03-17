@@ -2,6 +2,7 @@ let overlay = null;
 let heartbeatTimer = null;
 let overlayFocusTimer = null;
 let unlocking = false;
+let biometricPending = false;
 let lastTamperReportAt = 0;
 let lastTamperAction = '';
 const i18n = globalThis.CLPX_I18N;
@@ -39,7 +40,8 @@ let currentState = {
   maskPageIdentity: false,
   domainProfiles: [],
   requirePasswordOnDomainChange: true,
-  sessionAccessHosts: []
+  sessionAccessHosts: [],
+  biometricConfigured: false
 };
 
 function t(key, values) {
@@ -263,6 +265,20 @@ function setSelectedSessionMinutes(value) {
   overlay.querySelectorAll('.clpx-session-option').forEach((button) => {
     button.classList.toggle('is-active', Number(button.dataset.sessionValue) === normalized);
   });
+}
+
+function updateBiometricButtonState() {
+  if (!overlay) return;
+
+  const biometricButton = overlay.querySelector('#clpx-biometric-btn');
+  if (!biometricButton) return;
+
+  const shouldShow = !!currentState.biometricConfigured && !currentState.requiresPasswordSetup;
+  biometricButton.style.display = shouldShow ? 'block' : 'none';
+  biometricButton.disabled = biometricPending;
+  biometricButton.textContent = biometricPending
+    ? t('content.overlay.button.biometric_waiting')
+    : t('content.overlay.button.biometric');
 }
 
 function overlayOwnsFocus() {
@@ -904,6 +920,7 @@ function ensureOverlay() {
     overlay &&
     overlay.querySelector('#clpx-pass') &&
     overlay.querySelector('#clpx-btn') &&
+    overlay.querySelector('#clpx-biometric-btn') &&
     overlay.querySelector('#clpx-session-options') &&
     overlay.querySelector('#clpx-pass-confirm')
   ) {
@@ -956,6 +973,7 @@ function ensureOverlay() {
             <div id="clpx-session-note" class="clpx-session-note"></div>
           </div>
           <button id="clpx-btn" class="clpx-primary-btn" type="button">${t('content.overlay.button.unlock')}</button>
+          <button id="clpx-biometric-btn" class="clpx-secondary-btn" type="button">${t('content.overlay.button.biometric')}</button>
         </div>
         <div id="clpx-setup-note" class="clpx-setup-note"></div>
         <div id="clpx-hint" class="clpx-hint">${t('content.overlay.hint')}</div>
@@ -969,6 +987,7 @@ function ensureOverlay() {
   const passwordInput = overlay.querySelector('#clpx-pass');
   const confirmInput = overlay.querySelector('#clpx-pass-confirm');
   const submitButton = overlay.querySelector('#clpx-btn');
+  const biometricButton = overlay.querySelector('#clpx-biometric-btn');
   const errorNode = overlay.querySelector('#clpx-error');
   const sessionButtons = [...overlay.querySelectorAll('.clpx-session-option')];
   const languageToggleButton = overlay.querySelector('#clpx-lang-btn');
@@ -1103,11 +1122,51 @@ function ensureOverlay() {
     }
   }
 
-  submitButton.addEventListener('click', submitUnlock);
+  async function startBiometricUnlock() {
+    if (biometricPending || currentState.requiresPasswordSetup || !currentState.biometricConfigured) return;
 
-  ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach((eventName) => {
-    submitButton.addEventListener(eventName, (event) => {
-      event.stopPropagation();
+    biometricPending = true;
+    updateBiometricButtonState();
+    errorNode.textContent = '';
+
+    try {
+      const activeProfile = getActiveProfile();
+      const profileLockOnly = !isGlobalLockActiveForCurrentPage(activeProfile) && isProfilePolicyLocked(activeProfile);
+      const selectedValue = getSelectedSessionMinutes();
+      const useDefaultSession = selectedValue === -1;
+      const sessionMinutes = useDefaultSession ? getEffectiveDefaultSessionMinutes() : selectedValue;
+      const pageUnlockMinutes = useDefaultSession ? getEffectivePageUnlockMinutes(activeProfile) : selectedValue;
+
+      const response = await chrome.runtime.sendMessage({
+        type: 'BEGIN_BIOMETRIC_UNLOCK',
+        url: location.href,
+        pageOnly: profileLockOnly,
+        sessionMinutes: profileLockOnly ? pageUnlockMinutes : sessionMinutes,
+        useDefaultSession
+      });
+
+      if (!response?.ok) {
+        biometricPending = false;
+        updateBiometricButtonState();
+        errorNode.textContent = response?.error || t('content.overlay.error.biometric_failed');
+      }
+    } catch {
+      biometricPending = false;
+      updateBiometricButtonState();
+      errorNode.textContent = t('content.overlay.error.no_response');
+    }
+  }
+
+  submitButton.addEventListener('click', submitUnlock);
+  biometricButton?.addEventListener('click', startBiometricUnlock);
+
+  [submitButton, biometricButton].forEach((button) => {
+    if (!button) return;
+
+    ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach((eventName) => {
+      button.addEventListener(eventName, (event) => {
+        event.stopPropagation();
+      });
     });
   });
 
@@ -1134,6 +1193,7 @@ function ensureOverlay() {
 
   updateOverlayMode();
   updateOverlaySessionNote();
+  updateBiometricButtonState();
   return overlay;
 }
 
@@ -1151,6 +1211,7 @@ function applyOverlayLocalizedText() {
   const passwordInput = overlay.querySelector('#clpx-pass');
   const confirmInput = overlay.querySelector('#clpx-pass-confirm');
   const submitButton = overlay.querySelector('#clpx-btn');
+  const biometricButton = overlay.querySelector('#clpx-biometric-btn');
   const setupNote = overlay.querySelector('#clpx-setup-note');
   const sessionLabel = overlay.querySelector('#clpx-session-label');
   const hint = overlay.querySelector('#clpx-hint');
@@ -1187,6 +1248,7 @@ function applyOverlayLocalizedText() {
       setupNote.textContent = t('content.overlay.setup_note');
     }
     if (submitButton) submitButton.textContent = t('content.overlay.button.setup');
+    if (biometricButton) biometricButton.style.display = 'none';
     return;
   }
 
@@ -1212,6 +1274,7 @@ function applyOverlayLocalizedText() {
   if (submitButton && !submitButton.disabled) {
     submitButton.textContent = t('content.overlay.button.unlock');
   }
+  updateBiometricButtonState();
 }
 
 function legacyUpdateOverlayMode() {
@@ -1278,9 +1341,11 @@ function updateLockoutBanner() {
   const passwordInput = overlay.querySelector('#clpx-pass');
   const confirmInput = overlay.querySelector('#clpx-pass-confirm');
   const submitButton = overlay.querySelector('#clpx-btn');
+  const biometricButton = overlay.querySelector('#clpx-biometric-btn');
   const sessionButtons = overlay.querySelectorAll('.clpx-session-option');
   const remainingMs = Math.max(0, Number(currentState.lockoutUntil || 0) - Date.now());
   const lockedOut = !currentState.requiresPasswordSetup && remainingMs > 0;
+  const allowBiometric = lockedOut && !!currentState.biometricConfigured;
 
   lockoutNode.style.display = lockedOut ? 'block' : 'none';
   lockoutNode.textContent = lockedOut
@@ -1291,12 +1356,14 @@ function updateLockoutBanner() {
   confirmInput.disabled = lockedOut;
   submitButton.disabled = lockedOut;
   sessionButtons.forEach((button) => {
-    button.disabled = lockedOut;
+    button.disabled = lockedOut && !allowBiometric;
   });
+  if (biometricButton) biometricButton.disabled = biometricPending;
 
   if (!currentState.requiresPasswordSetup) {
     submitButton.textContent = lockedOut ? t('content.overlay.button.waiting') : t('content.overlay.button.unlock');
   }
+  updateBiometricButtonState();
 }
 
 function enforceOverlayIntegrity() {
@@ -1382,6 +1449,7 @@ function hideOverlay() {
   if (!overlay) return;
 
   clearOverlayFocusTimer();
+  biometricPending = false;
   overlay.style.display = 'none';
   document.documentElement.style.overflow = '';
   document.documentElement.classList.remove('clpx-html-lock');
@@ -1438,7 +1506,8 @@ async function init() {
         requirePasswordOnDomainChange: typeof state.requirePasswordOnDomainChange === 'boolean'
           ? state.requirePasswordOnDomainChange
           : true,
-        sessionAccessHosts: normalizeSessionAccessHosts(state.sessionAccessHosts)
+        sessionAccessHosts: normalizeSessionAccessHosts(state.sessionAccessHosts),
+        biometricConfigured: !!state.biometricConfigured
       };
     }
 
@@ -1453,6 +1522,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'LOCK_STATE_CHANGED') {
     const wasLocked = currentState.isLocked;
     const previousProfileId = getActiveProfile()?.id || '';
+    biometricPending = false;
     currentState = {
       isLocked: !!message.isLocked,
       whitelist: message.whitelist || [],
@@ -1468,7 +1538,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       requirePasswordOnDomainChange: typeof message.requirePasswordOnDomainChange === 'boolean'
         ? message.requirePasswordOnDomainChange
         : true,
-      sessionAccessHosts: normalizeSessionAccessHosts(message.sessionAccessHosts)
+      sessionAccessHosts: normalizeSessionAccessHosts(message.sessionAccessHosts),
+      biometricConfigured: !!message.biometricConfigured
     };
     const nextProfileId = getActiveProfile()?.id || '';
 
@@ -1477,6 +1548,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     syncUI();
+    sendResponse?.({ ok: true });
+    return;
+  }
+
+  if (message.type === 'BIOMETRIC_AUTH_RESULT') {
+    biometricPending = false;
+    updateBiometricButtonState();
+
+    if (message.success) {
+      if (message.mode === 'profile') {
+        const activeProfile = getActiveProfile();
+        grantActiveProfileAccess(
+          activeProfile,
+          Number.isFinite(Number(message.pageUnlockMinutes))
+            ? Number(message.pageUnlockMinutes)
+            : getEffectivePageUnlockMinutes(activeProfile)
+        );
+        hideOverlay();
+      }
+    } else if (overlay) {
+      const errorNode = overlay.querySelector('#clpx-error');
+      if (errorNode) {
+        errorNode.textContent = message.error || t('content.overlay.error.biometric_failed');
+      }
+    }
+
     sendResponse?.({ ok: true });
     return;
   }

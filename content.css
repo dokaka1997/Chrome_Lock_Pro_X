@@ -178,7 +178,8 @@
 }
 
 #clpx-overlay input,
-#clpx-overlay .clpx-primary-btn {
+#clpx-overlay .clpx-primary-btn,
+#clpx-overlay .clpx-secondary-btn {
   width: 100%;
   box-sizing: border-box;
   border-radius: 18px;
@@ -211,7 +212,18 @@
   background: linear-gradient(135deg, #4c8dff, #7f5bff 70%, #9a67ff);
 }
 
+#clpx-overlay .clpx-secondary-btn {
+  display: none;
+  padding: 15px 16px;
+  font-weight: 800;
+  color: #eef4ff;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 #clpx-overlay .clpx-primary-btn:disabled,
+#clpx-overlay .clpx-secondary-btn:disabled,
 #clpx-overlay input:disabled,
 #clpx-overlay .clpx-session-option:disabled {
   opacity: 0.55;

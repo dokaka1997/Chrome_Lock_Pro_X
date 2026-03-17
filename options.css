@@ -222,6 +222,21 @@ button {
   font-size: 13px;
 }
 
+.status-pill {
+  min-width: 130px;
+  text-align: center;
+}
+
+.status-pill.status-on {
+  background: rgba(34, 197, 94, 0.16);
+  color: #d9ffe5;
+}
+
+.status-pill.status-off {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ffd7d7;
+}
+
 .logs {
   display: grid;
   gap: 10px;

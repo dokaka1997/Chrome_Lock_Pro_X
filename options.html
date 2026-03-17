@@ -37,6 +37,21 @@
     </section>
 
     <section class="card glass">
+      <div class="logs-header">
+        <div>
+          <h2 id="biometricTitle">Biometric Unlock</h2>
+          <p id="biometricHelp" class="help">Use Windows Hello or another platform authenticator so Chrome can verify your fingerprint, face, or device PIN before unlocking.</p>
+        </div>
+        <div id="biometricStatus" class="pill status-pill">Not set up</div>
+      </div>
+      <div class="actions compact-actions">
+        <button id="setupBiometricBtn" class="secondary" type="button">Register Fingerprint / Face</button>
+        <button id="removeBiometricBtn" class="secondary" type="button">Remove Biometric Unlock</button>
+      </div>
+      <div id="biometricMsg" class="msg"></div>
+    </section>
+
+    <section class="card glass">
       <h2 id="policyTitle">Lock Policy</h2>
       <div class="grid two">
         <label>

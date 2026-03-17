@@ -24,7 +24,13 @@ const KEYS = {
   maskPageIdentity: 'maskPageIdentity',
   domainProfiles: 'domainProfiles',
   requirePasswordOnDomainChange: 'requirePasswordOnDomainChange',
-  sessionAccessHosts: 'sessionAccessHosts'
+  sessionAccessHosts: 'sessionAccessHosts',
+  biometricCredentialId: 'biometricCredentialId',
+  biometricPublicKey: 'biometricPublicKey',
+  biometricAlgorithm: 'biometricAlgorithm',
+  biometricTransports: 'biometricTransports',
+  biometricCreatedAt: 'biometricCreatedAt',
+  pendingBiometricRequest: 'pendingBiometricRequest'
 };
 
 const DEFAULTS = {
@@ -44,6 +50,12 @@ const DEFAULTS = {
   domainProfiles: [],
   requirePasswordOnDomainChange: true,
   sessionAccessHosts: [],
+  biometricCredentialId: '',
+  biometricPublicKey: '',
+  biometricAlgorithm: -7,
+  biometricTransports: [],
+  biometricCreatedAt: 0,
+  pendingBiometricRequest: null,
   logs: [],
   settingsVersion: 8,
   whitelist: [
@@ -89,6 +101,16 @@ function fromBase64(base64) {
     bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
+}
+
+function toBase64Url(bytes) {
+  return toBase64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function fromBase64Url(value) {
+  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  return fromBase64(normalized + padding);
 }
 
 function clampInteger(value, min, max, fallback) {
@@ -176,6 +198,47 @@ function readStateBoolean(state, key, fallback) {
 
 function isPlainObject(value) {
   return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeBiometricTransports(transports) {
+  if (!Array.isArray(transports)) return [];
+
+  const allowed = new Set(['ble', 'hybrid', 'internal', 'nfc', 'usb']);
+  return [...new Set(
+    transports
+      .map((transport) => String(transport || '').trim().toLowerCase())
+      .filter((transport) => allowed.has(transport))
+  )];
+}
+
+function hasBiometricCredential(state) {
+  return typeof state[KEYS.biometricCredentialId] === 'string'
+    && !!state[KEYS.biometricCredentialId]
+    && typeof state[KEYS.biometricPublicKey] === 'string'
+    && !!state[KEYS.biometricPublicKey];
+}
+
+function sanitizePendingBiometricRequest(value) {
+  if (!isPlainObject(value)) return null;
+
+  const type = value.type === 'setup' || value.type === 'unlock' ? value.type : '';
+  const requestId = typeof value.requestId === 'string' ? value.requestId.trim() : '';
+  const challenge = typeof value.challenge === 'string' ? value.challenge.trim() : '';
+  if (!type || !requestId || !challenge) return null;
+
+  return {
+    type,
+    requestId,
+    challenge,
+    createdAt: readStateNumber(value, 'createdAt', 0),
+    tabId: Number.isInteger(value.tabId) ? value.tabId : null,
+    url: typeof value.url === 'string' ? value.url : '',
+    pageOnly: !!value.pageOnly,
+    useDefaultSession: value.useDefaultSession !== false,
+    sessionMinutes: Number.isFinite(Number(value.sessionMinutes))
+      ? Number(value.sessionMinutes)
+      : DEFAULTS.unlockSessionMinutes
+  };
 }
 
 function sanitizeDomainProfile(profile, index = 0) {
@@ -309,7 +372,9 @@ function getSettingsSnapshot(state) {
       state,
       KEYS.requirePasswordOnDomainChange,
       DEFAULTS.requirePasswordOnDomainChange
-    )
+    ),
+    biometricConfigured: hasBiometricCredential(state),
+    biometricCreatedAt: readStateNumber(state, KEYS.biometricCreatedAt, DEFAULTS.biometricCreatedAt)
   };
 }
 
@@ -319,6 +384,19 @@ function getState() {
 
 function setState(partial) {
   return chrome.storage.local.set(partial);
+}
+
+async function getPendingBiometricRequest(state = null) {
+  const source = state || await getState();
+  return sanitizePendingBiometricRequest(source[KEYS.pendingBiometricRequest]);
+}
+
+async function setPendingBiometricRequest(request) {
+  await setState({ [KEYS.pendingBiometricRequest]: request });
+}
+
+async function clearPendingBiometricRequest() {
+  await chrome.storage.local.remove(KEYS.pendingBiometricRequest);
 }
 
 async function derivePasswordHash(password, saltBase64, iterations) {
@@ -343,6 +421,309 @@ async function derivePasswordHash(password, saltBase64, iterations) {
   );
 
   return toBase64(new Uint8Array(bits));
+}
+
+async function sha256Bytes(data) {
+  const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return new Uint8Array(digest);
+}
+
+function concatBytes(...parts) {
+  const arrays = parts.map((part) => (part instanceof Uint8Array ? part : new Uint8Array(part)));
+  const totalLength = arrays.reduce((sum, array) => sum + array.length, 0);
+  const output = new Uint8Array(totalLength);
+  let offset = 0;
+
+  arrays.forEach((array) => {
+    output.set(array, offset);
+    offset += array.length;
+  });
+
+  return output;
+}
+
+function getExtensionOrigin() {
+  return chrome.runtime.getURL('').replace(/\/$/, '');
+}
+
+async function verifyBiometricAssertion(message, request, state) {
+  const genericError = await tr('background.error.biometric_verification_failed');
+  if (!hasBiometricCredential(state)) {
+    throw new Error(await tr('background.error.biometric_not_setup'));
+  }
+
+  if (Number(state[KEYS.biometricAlgorithm] || DEFAULTS.biometricAlgorithm) !== -7) {
+    throw new Error(genericError);
+  }
+
+  const rawId = fromBase64Url(message.credentialId);
+  if (toBase64Url(rawId) !== state[KEYS.biometricCredentialId]) {
+    throw new Error(genericError);
+  }
+
+  const clientDataJSON = fromBase64Url(message.clientDataJSON);
+  const authenticatorData = fromBase64Url(message.authenticatorData);
+  const signature = fromBase64Url(message.signature);
+  if (authenticatorData.length < 37 || signature.length === 0) {
+    throw new Error(genericError);
+  }
+
+  let clientData = null;
+  try {
+    clientData = JSON.parse(new TextDecoder().decode(clientDataJSON));
+  } catch {
+    throw new Error(genericError);
+  }
+
+  if (clientData?.type !== 'webauthn.get') {
+    throw new Error(genericError);
+  }
+  if (clientData?.challenge !== request.challenge) {
+    throw new Error(genericError);
+  }
+  if (clientData?.origin !== getExtensionOrigin()) {
+    throw new Error(genericError);
+  }
+
+  const expectedRpIdHash = await sha256Bytes(new TextEncoder().encode(chrome.runtime.id));
+  const actualRpIdHash = authenticatorData.slice(0, 32);
+  if (!expectedRpIdHash.every((byte, index) => actualRpIdHash[index] === byte)) {
+    throw new Error(genericError);
+  }
+
+  const flags = authenticatorData[32];
+  const userPresent = (flags & 0x01) !== 0;
+  const userVerified = (flags & 0x04) !== 0;
+  if (!userPresent || !userVerified) {
+    throw new Error(genericError);
+  }
+
+  const verificationKey = await crypto.subtle.importKey(
+    'spki',
+    fromBase64(state[KEYS.biometricPublicKey]),
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['verify']
+  );
+
+  const clientDataHash = await sha256Bytes(clientDataJSON);
+  const signedData = concatBytes(authenticatorData, clientDataHash);
+  const verified = await crypto.subtle.verify(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    verificationKey,
+    signature,
+    signedData
+  );
+
+  if (!verified) {
+    throw new Error(genericError);
+  }
+}
+
+async function notifyBiometricResult(request, payload) {
+  if (!Number.isInteger(request?.tabId)) return;
+
+  try {
+    await chrome.tabs.sendMessage(request.tabId, {
+      type: 'BIOMETRIC_AUTH_RESULT',
+      ...payload
+    });
+  } catch {
+    // Ignore if the original tab is gone or cannot receive messages.
+  }
+}
+
+async function openBiometricWindow(requestId) {
+  const url = chrome.runtime.getURL(`biometric.html?requestId=${encodeURIComponent(requestId)}`);
+  await chrome.windows.create({
+    url,
+    type: 'popup',
+    focused: true,
+    width: 460,
+    height: 640
+  });
+}
+
+async function beginBiometricSetup() {
+  const state = await getState();
+  const settings = getSettingsSnapshot(state);
+  if (settings.requiresPasswordSetup) {
+    throw new Error(await tr('background.error.first_setup_required'));
+  }
+
+  const request = {
+    type: 'setup',
+    requestId: crypto.randomUUID(),
+    challenge: toBase64Url(randomBytes(32)),
+    createdAt: now(),
+    tabId: null,
+    url: '',
+    pageOnly: false,
+    useDefaultSession: true,
+    sessionMinutes: settings.unlockSessionMinutes
+  };
+
+  await setPendingBiometricRequest(request);
+
+  try {
+    await openBiometricWindow(request.requestId);
+  } catch (error) {
+    await clearPendingBiometricRequest();
+    throw error;
+  }
+}
+
+async function beginBiometricUnlock(sender, url, pageOnly, useDefaultSession, sessionMinutes) {
+  const state = await getState();
+  const settings = getSettingsSnapshot(state);
+
+  if (settings.requiresPasswordSetup) {
+    throw new Error(await tr('background.error.first_setup_before_unlock'));
+  }
+  if (!hasBiometricCredential(state)) {
+    throw new Error(await tr('background.error.biometric_not_setup'));
+  }
+  if (!Number.isInteger(sender?.tab?.id)) {
+    throw new Error(await tr('background.error.biometric_tab_missing'));
+  }
+
+  const request = {
+    type: 'unlock',
+    requestId: crypto.randomUUID(),
+    challenge: toBase64Url(randomBytes(32)),
+    createdAt: now(),
+    tabId: sender.tab.id,
+    url: url || sender?.url || sender?.tab?.url || '',
+    pageOnly: !!pageOnly,
+    useDefaultSession: !!useDefaultSession,
+    sessionMinutes: clampInteger(sessionMinutes, 0, 1440, settings.unlockSessionMinutes)
+  };
+
+  await setPendingBiometricRequest(request);
+
+  try {
+    await openBiometricWindow(request.requestId);
+  } catch (error) {
+    await clearPendingBiometricRequest();
+    throw error;
+  }
+}
+
+async function completeBiometricSetup(message) {
+  const state = await getState();
+  const request = await getPendingBiometricRequest(state);
+  if (!request || request.type !== 'setup' || request.requestId !== message.requestId) {
+    throw new Error(await tr('background.error.biometric_request_missing'));
+  }
+
+  const credentialId = String(message.credentialId || '').trim();
+  const publicKey = String(message.publicKey || '').trim();
+  const algorithm = Number(message.algorithm);
+  if (!credentialId || !publicKey || algorithm !== -7) {
+    throw new Error(await tr('background.error.biometric_public_key_missing'));
+  }
+
+  await setState({
+    [KEYS.biometricCredentialId]: credentialId,
+    [KEYS.biometricPublicKey]: publicKey,
+    [KEYS.biometricAlgorithm]: algorithm,
+    [KEYS.biometricTransports]: normalizeBiometricTransports(message.transports),
+    [KEYS.biometricCreatedAt]: now(),
+    [KEYS.pendingBiometricRequest]: null
+  });
+  await appendLog({ type: 'security', action: 'biometric-registered' });
+  await broadcastLockState();
+}
+
+async function completeBiometricUnlock(message) {
+  const state = await getState();
+  const settings = getSettingsSnapshot(state);
+  const request = await getPendingBiometricRequest(state);
+  if (!request || request.type !== 'unlock' || request.requestId !== message.requestId) {
+    throw new Error(await tr('background.error.biometric_request_missing'));
+  }
+
+  try {
+    await verifyBiometricAssertion(message, request, state);
+  } catch (error) {
+    await appendLog({
+      type: 'security',
+      action: 'biometric-verification-failed',
+      url: safeUrlForLog(request.url)
+    });
+    await clearPendingBiometricRequest();
+    await notifyBiometricResult(request, { ok: true, success: false, error: error.message });
+    throw error;
+  }
+
+  if (request.pageOnly) {
+    const matchedProfile = findMatchingProfileForUrl(request.url, settings.domainProfiles);
+    const effectivePageUnlockMinutes = resolvePageUnlockMinutes(
+      matchedProfile,
+      settings.unlockSessionMinutes
+    );
+
+    await appendLog({
+      type: 'unlock',
+      source: 'profile-biometric',
+      url: safeUrlForLog(request.url),
+      meta: {
+        profileId: matchedProfile?.id || '',
+        profileName: matchedProfile?.name || '',
+        pageUnlockMinutes: effectivePageUnlockMinutes
+      }
+    });
+    await clearPendingBiometricRequest();
+    await notifyBiometricResult(request, {
+      ok: true,
+      success: true,
+      mode: 'profile',
+      profileId: matchedProfile?.id || '',
+      profileName: matchedProfile?.name || '',
+      pageUnlockMinutes: effectivePageUnlockMinutes
+    });
+    return;
+  }
+
+  const requestedSessionMinutes = resolveUnlockSessionMinutes(
+    settings,
+    request.url,
+    request.useDefaultSession,
+    request.sessionMinutes
+  );
+
+  await unlockNow(
+    state,
+    'biometric',
+    request.url,
+    requestedSessionMinutes,
+    settings.requirePasswordOnDomainChange
+  );
+  await clearPendingBiometricRequest();
+  await notifyBiometricResult(request, {
+    ok: true,
+    success: true,
+    mode: 'global',
+    sessionMinutes: requestedSessionMinutes
+  });
+}
+
+async function cancelBiometricRequest(requestId, errorMessage = '') {
+  const state = await getState();
+  const request = await getPendingBiometricRequest(state);
+  if (!request || request.requestId !== requestId) {
+    return;
+  }
+
+  await clearPendingBiometricRequest();
+  if (request.type === 'unlock') {
+    await notifyBiometricResult(request, {
+      ok: true,
+      success: false,
+      error: errorMessage || await tr('background.error.biometric_cancelled')
+    });
+  }
 }
 
 async function ensureInitialized() {
@@ -395,6 +776,38 @@ async function ensureInitialized() {
     if (JSON.stringify(normalizedBlurMap) !== JSON.stringify(state[KEYS.blurRegionsByDomain])) {
       updates[KEYS.blurRegionsByDomain] = normalizedBlurMap;
     }
+  }
+
+  const hasBiometricId = typeof state[KEYS.biometricCredentialId] === 'string' && !!state[KEYS.biometricCredentialId];
+  const hasBiometricKey = typeof state[KEYS.biometricPublicKey] === 'string' && !!state[KEYS.biometricPublicKey];
+  if (!hasBiometricId || !hasBiometricKey) {
+    updates[KEYS.biometricCredentialId] = '';
+    updates[KEYS.biometricPublicKey] = '';
+    updates[KEYS.biometricAlgorithm] = DEFAULTS.biometricAlgorithm;
+    updates[KEYS.biometricTransports] = [...DEFAULTS.biometricTransports];
+    updates[KEYS.biometricCreatedAt] = DEFAULTS.biometricCreatedAt;
+  } else {
+    if (!Number.isFinite(Number(state[KEYS.biometricAlgorithm]))) {
+      updates[KEYS.biometricAlgorithm] = DEFAULTS.biometricAlgorithm;
+    }
+    if (!Array.isArray(state[KEYS.biometricTransports])) {
+      updates[KEYS.biometricTransports] = [...DEFAULTS.biometricTransports];
+    } else {
+      const normalizedTransports = normalizeBiometricTransports(state[KEYS.biometricTransports]);
+      if (JSON.stringify(normalizedTransports) !== JSON.stringify(state[KEYS.biometricTransports])) {
+        updates[KEYS.biometricTransports] = normalizedTransports;
+      }
+    }
+    if (!Number.isFinite(Number(state[KEYS.biometricCreatedAt]))) {
+      updates[KEYS.biometricCreatedAt] = DEFAULTS.biometricCreatedAt;
+    }
+  }
+
+  const pendingBiometricRequest = sanitizePendingBiometricRequest(state[KEYS.pendingBiometricRequest]);
+  if (state[KEYS.pendingBiometricRequest] && !pendingBiometricRequest) {
+    updates[KEYS.pendingBiometricRequest] = null;
+  } else if (pendingBiometricRequest && pendingBiometricRequest.createdAt > 0 && (now() - pendingBiometricRequest.createdAt) > 10 * 60 * 1000) {
+    updates[KEYS.pendingBiometricRequest] = null;
   }
 
   if (!hasPassword || !hasSalt) {
@@ -649,7 +1062,9 @@ function buildStateResponse(state) {
     maskPageIdentity: settings.maskPageIdentity,
     domainProfiles: settings.domainProfiles,
     requirePasswordOnDomainChange: settings.requirePasswordOnDomainChange,
-    sessionAccessHosts: normalizeSessionAccessHosts(state[KEYS.sessionAccessHosts])
+    sessionAccessHosts: normalizeSessionAccessHosts(state[KEYS.sessionAccessHosts]),
+    biometricConfigured: settings.biometricConfigured,
+    biometricCreatedAt: settings.biometricCreatedAt
   };
 }
 
@@ -846,6 +1261,98 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === 'GET_STATE') {
       sendResponse(buildStateResponse(state));
+      return;
+    }
+
+    if (message.type === 'GET_BIOMETRIC_CONTEXT') {
+      const request = await getPendingBiometricRequest(state);
+      if (!request || request.requestId !== String(message.requestId || '').trim()) {
+        sendResponse({ ok: false, error: await tr('background.error.biometric_request_missing') });
+        return;
+      }
+
+      sendResponse({
+        ok: true,
+        request,
+        credential: hasBiometricCredential(state)
+          ? {
+              credentialId: state[KEYS.biometricCredentialId],
+              transports: normalizeBiometricTransports(state[KEYS.biometricTransports])
+            }
+          : null,
+        extensionOrigin: getExtensionOrigin(),
+        rpId: chrome.runtime.id
+      });
+      return;
+    }
+
+    if (message.type === 'BEGIN_BIOMETRIC_SETUP') {
+      try {
+        await beginBiometricSetup();
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+      }
+      return;
+    }
+
+    if (message.type === 'BEGIN_BIOMETRIC_UNLOCK') {
+      try {
+        await beginBiometricUnlock(
+          sender,
+          message.url || sender?.url || '',
+          !!message.pageOnly,
+          !!message.useDefaultSession,
+          message.sessionMinutes
+        );
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+      }
+      return;
+    }
+
+    if (message.type === 'COMPLETE_BIOMETRIC_SETUP') {
+      try {
+        await completeBiometricSetup(message);
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+      }
+      return;
+    }
+
+    if (message.type === 'COMPLETE_BIOMETRIC_UNLOCK') {
+      try {
+        await completeBiometricUnlock(message);
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: error?.message || await tr('background.error.unexpected') });
+      }
+      return;
+    }
+
+    if (message.type === 'CANCEL_BIOMETRIC_REQUEST') {
+      await cancelBiometricRequest(
+        String(message.requestId || '').trim(),
+        String(message.error || '').trim()
+      );
+      sendResponse({ ok: true });
+      return;
+    }
+
+    if (message.type === 'REMOVE_BIOMETRIC_CREDENTIAL') {
+      await setState({
+        [KEYS.biometricCredentialId]: '',
+        [KEYS.biometricPublicKey]: '',
+        [KEYS.biometricAlgorithm]: DEFAULTS.biometricAlgorithm,
+        [KEYS.biometricTransports]: [],
+        [KEYS.biometricCreatedAt]: 0,
+        [KEYS.pendingBiometricRequest]: null
+      });
+      await appendLog({ type: 'security', action: 'biometric-removed' });
+      await broadcastLockState();
+      sendResponse({ ok: true });
       return;
     }
 

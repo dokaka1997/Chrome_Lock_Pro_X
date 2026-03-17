@@ -7,6 +7,10 @@ const newPassword = document.getElementById('newPassword');
 const confirmPassword = document.getElementById('confirmPassword');
 const changePasswordBtn = document.getElementById('changePasswordBtn');
 const passwordMsg = document.getElementById('passwordMsg');
+const biometricStatus = document.getElementById('biometricStatus');
+const setupBiometricBtn = document.getElementById('setupBiometricBtn');
+const removeBiometricBtn = document.getElementById('removeBiometricBtn');
+const biometricMsg = document.getElementById('biometricMsg');
 const autoLockMinutes = document.getElementById('autoLockMinutes');
 const unlockSessionMinutes = document.getElementById('unlockSessionMinutes');
 const maxAttempts = document.getElementById('maxAttempts');
@@ -180,6 +184,26 @@ function applyPasswordMode() {
 
   if (requiresSetup) {
     setMessage(passwordMsg, t('options.password.initial_hint'));
+  }
+}
+
+function renderBiometricState() {
+  const configured = !!currentState?.biometricConfigured;
+  const requiresSetup = !!currentState?.requiresPasswordSetup;
+
+  biometricStatus.textContent = configured
+    ? t('options.biometric.status.ready')
+    : t('options.biometric.status.not_setup');
+  biometricStatus.classList.toggle('status-on', configured);
+  biometricStatus.classList.toggle('status-off', !configured);
+
+  setupBiometricBtn.disabled = requiresSetup;
+  removeBiometricBtn.disabled = !configured;
+
+  if (requiresSetup) {
+    setMessage(biometricMsg, t('options.biometric.messages.password_first'), true);
+  } else if (biometricMsg.textContent === t('options.biometric.messages.password_first')) {
+    setMessage(biometricMsg, '');
   }
 }
 
@@ -416,6 +440,10 @@ function applyStaticTranslations() {
   document.getElementById('oldPasswordLabel').textContent = t('options.password.old_label');
   document.getElementById('newPasswordLabel').textContent = t('options.password.new_label');
   document.getElementById('confirmPasswordLabel').textContent = t('options.password.confirm_label');
+  document.getElementById('biometricTitle').textContent = t('options.biometric.title');
+  document.getElementById('biometricHelp').textContent = t('options.biometric.help');
+  setupBiometricBtn.textContent = t('common.action.register_biometric');
+  removeBiometricBtn.textContent = t('common.action.remove_biometric');
   document.getElementById('policyTitle').textContent = t('options.policy.title');
   document.getElementById('autoLockMinutesLabel').textContent = t('options.policy.auto_lock_label');
   document.getElementById('unlockSessionMinutesLabel').textContent = t('options.policy.default_session_label');
@@ -452,6 +480,7 @@ function applyStaticTranslations() {
   document.getElementById('logsTitle').textContent = t('options.logs.title');
 
   applyPasswordMode();
+  renderBiometricState();
   renderProfileList(collectProfiles());
 }
 
@@ -517,6 +546,7 @@ async function loadState() {
     whitelistInput.value = (state.whitelist || []).join('\n');
     renderProfileList(Array.isArray(state.domainProfiles) ? state.domainProfiles : []);
     applyStaticTranslations();
+    renderBiometricState();
   }
 
   const logs = await chrome.runtime.sendMessage({ type: 'GET_LOGS' });
@@ -564,6 +594,31 @@ changePasswordBtn.addEventListener('click', async () => {
       ? t('options.password.success.initial')
       : t('options.password.success.changed')
   );
+  await loadState();
+});
+
+setupBiometricBtn.addEventListener('click', async () => {
+  setMessage(biometricMsg, '');
+
+  const response = await chrome.runtime.sendMessage({ type: 'BEGIN_BIOMETRIC_SETUP' });
+  if (!response?.ok) {
+    setMessage(biometricMsg, response?.error || t('options.biometric.messages.request_failed'), true);
+    return;
+  }
+
+  setMessage(biometricMsg, t('options.biometric.messages.window_opened'));
+});
+
+removeBiometricBtn.addEventListener('click', async () => {
+  setMessage(biometricMsg, '');
+
+  const response = await chrome.runtime.sendMessage({ type: 'REMOVE_BIOMETRIC_CREDENTIAL' });
+  if (!response?.ok) {
+    setMessage(biometricMsg, response?.error || t('options.biometric.messages.remove_failed'), true);
+    return;
+  }
+
+  setMessage(biometricMsg, t('options.biometric.messages.removed'));
   await loadState();
 });
 
@@ -678,6 +733,20 @@ configFileInput.addEventListener('change', async () => {
   } finally {
     configFileInput.value = '';
   }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type !== 'LOCK_STATE_CHANGED') return;
+
+  const biometricWasDisabled = !currentState?.biometricConfigured;
+  const biometricNowEnabled = !!message.biometricConfigured;
+
+  loadState();
+  if (biometricWasDisabled && biometricNowEnabled) {
+    setMessage(biometricMsg, t('options.biometric.messages.registered'));
+  }
+
+  sendResponse?.({ ok: true });
 });
 
 document.getElementById('testRuleBtn').addEventListener('click', runRuleTest);
