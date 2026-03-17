@@ -1199,11 +1199,24 @@ function exportConfig(state) {
 
 chrome.runtime.onInstalled.addListener(async () => {
   await ensureInitialized();
+  const state = await getState();
+  if (readStateBoolean(state, KEYS.requiresPasswordSetup, DEFAULTS.requiresPasswordSetup)) {
+    await setState({ [KEYS.isLocked]: false });
+    await chrome.runtime.openOptionsPage();
+    await broadcastLockState();
+    return;
+  }
   await lockNow('startup');
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   await ensureInitialized();
+  const state = await getState();
+  if (readStateBoolean(state, KEYS.requiresPasswordSetup, DEFAULTS.requiresPasswordSetup)) {
+    await setState({ [KEYS.isLocked]: false });
+    await broadcastLockState();
+    return;
+  }
   await lockNow('startup');
 });
 

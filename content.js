@@ -222,6 +222,7 @@ function isProfilePolicyLocked(profile = getActiveProfile()) {
 
 function shouldLockCurrentPage() {
   if (!isLockablePage()) return false;
+  if (currentState.requiresPasswordSetup) return false;
 
   const activeProfile = getActiveProfile();
   const globalLocked = isGlobalLockActiveForCurrentPage(activeProfile);
