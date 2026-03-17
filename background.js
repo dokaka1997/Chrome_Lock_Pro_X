@@ -523,6 +523,90 @@ function concatBytes(...parts) {
   return output;
 }
 
+function readDerLength(bytes, offset) {
+  if (offset >= bytes.length) {
+    throw new Error('Invalid DER length.');
+  }
+
+  const firstByte = bytes[offset];
+  if ((firstByte & 0x80) === 0) {
+    return {
+      length: firstByte,
+      nextOffset: offset + 1
+    };
+  }
+
+  const lengthBytes = firstByte & 0x7f;
+  if (lengthBytes < 1 || lengthBytes > 4 || (offset + 1 + lengthBytes) > bytes.length) {
+    throw new Error('Invalid DER length.');
+  }
+
+  let length = 0;
+  for (let index = 0; index < lengthBytes; index += 1) {
+    length = (length << 8) | bytes[offset + 1 + index];
+  }
+
+  return {
+    length,
+    nextOffset: offset + 1 + lengthBytes
+  };
+}
+
+function normalizeDerInteger(bytes, fieldLength) {
+  let start = 0;
+  while (start < bytes.length - 1 && bytes[start] === 0) {
+    start += 1;
+  }
+
+  const normalized = bytes.slice(start);
+  if (normalized.length > fieldLength) {
+    throw new Error('Invalid DER integer.');
+  }
+
+  const output = new Uint8Array(fieldLength);
+  output.set(normalized, fieldLength - normalized.length);
+  return output;
+}
+
+function convertDerEcdsaSignatureToP1363(signature, fieldLength = 32) {
+  const bytes = signature instanceof Uint8Array ? signature : new Uint8Array(signature);
+  if (bytes.length < 8 || bytes[0] !== 0x30) {
+    throw new Error('Invalid DER signature.');
+  }
+
+  const sequenceLengthInfo = readDerLength(bytes, 1);
+  const sequenceEnd = sequenceLengthInfo.nextOffset + sequenceLengthInfo.length;
+  if (sequenceEnd !== bytes.length) {
+    throw new Error('Invalid DER signature.');
+  }
+
+  let offset = sequenceLengthInfo.nextOffset;
+  if (bytes[offset] !== 0x02) {
+    throw new Error('Invalid DER signature.');
+  }
+
+  const rLengthInfo = readDerLength(bytes, offset + 1);
+  const rEnd = rLengthInfo.nextOffset + rLengthInfo.length;
+  if (rEnd > bytes.length) {
+    throw new Error('Invalid DER signature.');
+  }
+  const r = normalizeDerInteger(bytes.slice(rLengthInfo.nextOffset, rEnd), fieldLength);
+
+  offset = rEnd;
+  if (bytes[offset] !== 0x02) {
+    throw new Error('Invalid DER signature.');
+  }
+
+  const sLengthInfo = readDerLength(bytes, offset + 1);
+  const sEnd = sLengthInfo.nextOffset + sLengthInfo.length;
+  if (sEnd !== bytes.length) {
+    throw new Error('Invalid DER signature.');
+  }
+  const s = normalizeDerInteger(bytes.slice(sLengthInfo.nextOffset, sEnd), fieldLength);
+
+  return concatBytes(r, s);
+}
+
 function getExtensionOrigin() {
   return chrome.runtime.getURL('').replace(/\/$/, '');
 }
@@ -589,10 +673,17 @@ async function verifyBiometricAssertion(message, request, state) {
 
   const clientDataHash = await sha256Bytes(clientDataJSON);
   const signedData = concatBytes(authenticatorData, clientDataHash);
+  let normalizedSignature = signature;
+  try {
+    normalizedSignature = convertDerEcdsaSignatureToP1363(signature, 32);
+  } catch {
+    throw new Error(genericError);
+  }
+
   const verified = await crypto.subtle.verify(
     { name: 'ECDSA', hash: 'SHA-256' },
     verificationKey,
-    signature,
+    normalizedSignature,
     signedData
   );
 
