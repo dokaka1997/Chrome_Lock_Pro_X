@@ -72,6 +72,9 @@ const ALARMS = {
   sessionRelock: 'session-relock'
 };
 
+const BIOMETRIC_REQUEST_TTL_MS = 10 * 60 * 1000;
+const MAX_PENDING_BIOMETRIC_REQUESTS = 8;
+
 function now() {
   return Date.now();
 }
@@ -241,6 +244,26 @@ function sanitizePendingBiometricRequest(value) {
   };
 }
 
+function sanitizePendingBiometricRequests(value) {
+  const rawRequests = Array.isArray(value)
+    ? value
+    : value
+      ? [value]
+      : [];
+
+  const dedupedRequests = new Map();
+  for (const rawRequest of rawRequests) {
+    const request = sanitizePendingBiometricRequest(rawRequest);
+    if (!request) continue;
+    if (request.createdAt > 0 && (now() - request.createdAt) > BIOMETRIC_REQUEST_TTL_MS) continue;
+    dedupedRequests.set(request.requestId, request);
+  }
+
+  return [...dedupedRequests.values()]
+    .sort((left, right) => left.createdAt - right.createdAt)
+    .slice(-MAX_PENDING_BIOMETRIC_REQUESTS);
+}
+
 function sanitizeDomainProfile(profile, index = 0) {
   if (!isPlainObject(profile)) return null;
 
@@ -387,16 +410,54 @@ function setState(partial) {
 }
 
 async function getPendingBiometricRequest(state = null) {
+  return getPendingBiometricRequestById('', state);
+}
+
+async function getPendingBiometricRequests(state = null) {
   const source = state || await getState();
-  return sanitizePendingBiometricRequest(source[KEYS.pendingBiometricRequest]);
+  return sanitizePendingBiometricRequests(source[KEYS.pendingBiometricRequest]);
+}
+
+async function getPendingBiometricRequestById(requestId = '', state = null) {
+  const requests = await getPendingBiometricRequests(state);
+  const normalizedRequestId = String(requestId || '').trim();
+
+  if (!normalizedRequestId) {
+    return requests[requests.length - 1] || null;
+  }
+
+  return requests.find((request) => request.requestId === normalizedRequestId) || null;
 }
 
 async function setPendingBiometricRequest(request) {
-  await setState({ [KEYS.pendingBiometricRequest]: request });
+  const normalizedRequest = sanitizePendingBiometricRequest(request);
+  if (!normalizedRequest) return;
+
+  const requests = await getPendingBiometricRequests();
+  const nextRequests = requests.filter((entry) => entry.requestId !== normalizedRequest.requestId);
+  nextRequests.push(normalizedRequest);
+  await setState({
+    [KEYS.pendingBiometricRequest]: sanitizePendingBiometricRequests(nextRequests)
+  });
 }
 
-async function clearPendingBiometricRequest() {
-  await chrome.storage.local.remove(KEYS.pendingBiometricRequest);
+async function clearPendingBiometricRequest(requestId = '') {
+  const normalizedRequestId = String(requestId || '').trim();
+  if (!normalizedRequestId) {
+    await chrome.storage.local.remove(KEYS.pendingBiometricRequest);
+    return;
+  }
+
+  const requests = await getPendingBiometricRequests();
+  const nextRequests = requests.filter((request) => request.requestId !== normalizedRequestId);
+  if (!nextRequests.length) {
+    await chrome.storage.local.remove(KEYS.pendingBiometricRequest);
+    return;
+  }
+
+  await setState({
+    [KEYS.pendingBiometricRequest]: nextRequests
+  });
 }
 
 async function derivePasswordHash(password, saltBase64, iterations) {
@@ -569,7 +630,7 @@ async function beginBiometricSetup() {
   try {
     await openBiometricWindow(request.requestId);
   } catch (error) {
-    await clearPendingBiometricRequest();
+    await clearPendingBiometricRequest(request.requestId);
     throw error;
   }
 }
@@ -605,14 +666,14 @@ async function beginBiometricUnlock(sender, url, pageOnly, useDefaultSession, se
   try {
     await openBiometricWindow(request.requestId);
   } catch (error) {
-    await clearPendingBiometricRequest();
+    await clearPendingBiometricRequest(request.requestId);
     throw error;
   }
 }
 
 async function completeBiometricSetup(message) {
   const state = await getState();
-  const request = await getPendingBiometricRequest(state);
+  const request = await getPendingBiometricRequestById(message.requestId, state);
   if (!request || request.type !== 'setup' || request.requestId !== message.requestId) {
     throw new Error(await tr('background.error.biometric_request_missing'));
   }
@@ -629,9 +690,9 @@ async function completeBiometricSetup(message) {
     [KEYS.biometricPublicKey]: publicKey,
     [KEYS.biometricAlgorithm]: algorithm,
     [KEYS.biometricTransports]: normalizeBiometricTransports(message.transports),
-    [KEYS.biometricCreatedAt]: now(),
-    [KEYS.pendingBiometricRequest]: null
+    [KEYS.biometricCreatedAt]: now()
   });
+  await clearPendingBiometricRequest(request.requestId);
   await appendLog({ type: 'security', action: 'biometric-registered' });
   await broadcastLockState();
 }
@@ -639,7 +700,7 @@ async function completeBiometricSetup(message) {
 async function completeBiometricUnlock(message) {
   const state = await getState();
   const settings = getSettingsSnapshot(state);
-  const request = await getPendingBiometricRequest(state);
+  const request = await getPendingBiometricRequestById(message.requestId, state);
   if (!request || request.type !== 'unlock' || request.requestId !== message.requestId) {
     throw new Error(await tr('background.error.biometric_request_missing'));
   }
@@ -652,7 +713,7 @@ async function completeBiometricUnlock(message) {
       action: 'biometric-verification-failed',
       url: safeUrlForLog(request.url)
     });
-    await clearPendingBiometricRequest();
+    await clearPendingBiometricRequest(request.requestId);
     await notifyBiometricResult(request, { ok: true, success: false, error: error.message });
     throw error;
   }
@@ -674,7 +735,7 @@ async function completeBiometricUnlock(message) {
         pageUnlockMinutes: effectivePageUnlockMinutes
       }
     });
-    await clearPendingBiometricRequest();
+    await clearPendingBiometricRequest(request.requestId);
     await notifyBiometricResult(request, {
       ok: true,
       success: true,
@@ -700,7 +761,7 @@ async function completeBiometricUnlock(message) {
     requestedSessionMinutes,
     settings.requirePasswordOnDomainChange
   );
-  await clearPendingBiometricRequest();
+  await clearPendingBiometricRequest(request.requestId);
   await notifyBiometricResult(request, {
     ok: true,
     success: true,
@@ -711,12 +772,12 @@ async function completeBiometricUnlock(message) {
 
 async function cancelBiometricRequest(requestId, errorMessage = '') {
   const state = await getState();
-  const request = await getPendingBiometricRequest(state);
+  const request = await getPendingBiometricRequestById(requestId, state);
   if (!request || request.requestId !== requestId) {
     return;
   }
 
-  await clearPendingBiometricRequest();
+  await clearPendingBiometricRequest(request.requestId);
   if (request.type === 'unlock') {
     await notifyBiometricResult(request, {
       ok: true,
@@ -803,11 +864,10 @@ async function ensureInitialized() {
     }
   }
 
-  const pendingBiometricRequest = sanitizePendingBiometricRequest(state[KEYS.pendingBiometricRequest]);
-  if (state[KEYS.pendingBiometricRequest] && !pendingBiometricRequest) {
-    updates[KEYS.pendingBiometricRequest] = null;
-  } else if (pendingBiometricRequest && pendingBiometricRequest.createdAt > 0 && (now() - pendingBiometricRequest.createdAt) > 10 * 60 * 1000) {
-    updates[KEYS.pendingBiometricRequest] = null;
+  const pendingBiometricRequests = sanitizePendingBiometricRequests(state[KEYS.pendingBiometricRequest]);
+  const normalizedPendingBiometricRequests = pendingBiometricRequests.length ? pendingBiometricRequests : null;
+  if (JSON.stringify(state[KEYS.pendingBiometricRequest] ?? null) !== JSON.stringify(normalizedPendingBiometricRequests)) {
+    updates[KEYS.pendingBiometricRequest] = normalizedPendingBiometricRequests;
   }
 
   if (!hasPassword || !hasSalt) {
@@ -1290,8 +1350,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'GET_BIOMETRIC_CONTEXT') {
-      const request = await getPendingBiometricRequest(state);
-      if (!request || request.requestId !== String(message.requestId || '').trim()) {
+      const request = await getPendingBiometricRequestById(message.requestId, state);
+      if (!request) {
         sendResponse({ ok: false, error: await tr('background.error.biometric_request_missing') });
         return;
       }
